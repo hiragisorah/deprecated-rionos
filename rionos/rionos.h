@@ -16,6 +16,9 @@ public:
 
 public:
 	void Destroy(void) override;
+
+private:
+	std::shared_ptr<Seed::Scene> main_scene_;
 };
 
 Game __declspec(dllexport) * const Create(Graphics * const graphics);

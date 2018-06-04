@@ -4,6 +4,7 @@
 #pragma warning(disable: 4275)
 
 #include "graphics.h"
+#include "seed-engine\scene.h"
 
 class Game
 {
