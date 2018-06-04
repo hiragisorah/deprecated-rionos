@@ -1,0 +1,3 @@
+LIBRARY simple-window
+EXPORTS
+	Create

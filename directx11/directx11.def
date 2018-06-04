@@ -1,0 +1,3 @@
+LIBRARY directx11
+EXPORTS
+	Create

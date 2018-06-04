@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{BE386796-5E18-4843-BFF2-A1FE96A5FC0A}</ProjectGuid>
-    <RootNamespace>gameproject</RootNamespace>
+    <ProjectGuid>{F83090B5-446C-42F6-9712-DA337C5EBB8F}</ProjectGuid>
+    <RootNamespace>pathmanager</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -75,11 +75,6 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
-    <PreBuildEvent>
-      <Command>msbuild /p:Configuration=Debug path-manager\path-manager.vcxproj
-move path-manager\Debug\path-manager.exe .\
-start path-manager.exe</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -115,15 +110,10 @@ start path-manager.exe</Command>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="graphics.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClInclude Include="path-manager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="dll.h" />
-    <ClInclude Include="game.h" />
-    <ClInclude Include="graphics.h" />
-    <ClInclude Include="renderer.h" />
-    <ClInclude Include="window.h" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
