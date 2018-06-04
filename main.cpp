@@ -9,7 +9,7 @@
 #include "graphics.h"
 #include "game.h"
 
-template<class ... Args> bool NullCheck(Args ... args)
+template<class ... Args> bool NullCheck(Args * ... args)
 {
 	bool ret = true;
 
