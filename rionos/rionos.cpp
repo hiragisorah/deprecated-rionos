@@ -7,6 +7,7 @@
 void Rionos::Initialize(void)
 {
 	this->main_scene_ = std::make_shared<TestScene>(this->main_scene_);
+	this->main_scene_->set_graphics(this->graphics());
 	this->main_scene_->Initialize();
 }
 

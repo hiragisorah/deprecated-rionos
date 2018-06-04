@@ -10,7 +10,7 @@ public:
 	TestComponent(std::shared_ptr<Component> & self)
 		: Seed::Component(self)
 	{
-
+		
 	}
 
 private:
