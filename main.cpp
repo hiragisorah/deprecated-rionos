@@ -28,10 +28,13 @@ int main(void)
 {
 	DLLClass<Window> window;
 	window.Create("Debug/simple-window.dll", std::string("window"), 1280U, 720U);
+
 	DLLClass<Graphics> graphics;
 	graphics.Create("Debug/directx11.dll", window);
+
 	DLLClass<Game> game;
-	game.Create("Debug/rionos.dll");
+	game.Create("Debug/rionos.dll", graphics);
+
 	if (!NullCheck(window.Class(), graphics.Class(), game.Class())) return 0;
 	
 	window->Initialize();

@@ -1,5 +1,8 @@
 #pragma once
 
+#pragma warning(disable: 4251)
+#pragma warning(disable: 4275)
+
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 

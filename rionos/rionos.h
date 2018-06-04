@@ -5,6 +5,11 @@
 class __declspec(dllexport) Rionos : public Game
 {
 public:
+	Rionos(Graphics * const graphics)
+		: Game(graphics)
+	{}
+
+public:
 	void Initialize(void) override;
 	bool Run(void) override;
 	void Finalize(void) override;
@@ -13,4 +18,4 @@ public:
 	void Destroy(void) override;
 };
 
-Game __declspec(dllexport) * Create(void);
+Game __declspec(dllexport) * const Create(Graphics * const graphics);

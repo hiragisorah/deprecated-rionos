@@ -5,7 +5,7 @@ void SimpleWindow::Destroy(void)
 	delete this;
 }
 
-Window * Create(std::string caption, unsigned int width, unsigned int height)
+Window * const Create(std::string caption, unsigned int width, unsigned int height)
 {
 	return new SimpleWindow(caption, width, height);
 }

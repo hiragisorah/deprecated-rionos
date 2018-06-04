@@ -15,11 +15,12 @@ using namespace Microsoft::WRL;
 class __declspec(dllexport) DirectX11 : public Graphics
 {
 public:
-	DirectX11(const Window * window);
+	DirectX11(Window * const window)
+		: Graphics(window)
+		, frame_rate_(FRAME_RATE_LIMITED)
+	{}
 
 private:
-	const Window * window_;
-
 	ComPtr<ID3D11Device> device_;
 	ComPtr<ID3D11DeviceContext> context_;
 	ComPtr<IDXGISwapChain> swap_chain_;
@@ -35,8 +36,6 @@ public:
 	void Finalize(void) override;
 	void Clear(void) override;
 	void Present(void) override;
-
-public:
 	void Rendering(const std::weak_ptr<Renderer> & renderer) override;
 
 private:
@@ -64,15 +63,14 @@ private:
 	void CreateSamplerState(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE mode, SAMPLER_STATE sampler_state);
 
 public:
-	void SetupBackBuffer(void) override;
-	void SetupDeffered(void) override;
-	void SetupShadowMap(void) override;
-
-	void Setup2D(void) override;
-	void Setup3D(void) override;
+	void BackBuffer2D(void) override;
+	void BackBuffer3D(void) override;
+	void Deffered2D(void) override;
+	void Deffered3D(void) override;
+	void ShadowMap(void) override;
 
 public:
 	void Destroy(void) override;
 };
 
-Graphics __declspec(dllexport) * Create(const Window * window);
+Graphics __declspec(dllexport) * const Create(const Window * window);

@@ -1,12 +1,6 @@
 #include "directx11.h"
 #include <iostream>
 
-DirectX11::DirectX11(const Window * window)
-	: window_(window)
-	, frame_rate_(FRAME_RATE_LIMITED)
-{
-}
-
 const ComPtr<ID3D11Device> & DirectX11::device(void)
 {
 	return this->device_;
@@ -61,6 +55,7 @@ void DirectX11::Present(void)
 
 void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 {
+	renderer;
 	//auto r = renderer.lock();
 	//auto & rm = ResourceManager::Get();
 	//auto & shader = rm.GetShader<Dx11Shader>(r->shader_);
@@ -275,26 +270,27 @@ void DirectX11::CreateSamplerState(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MO
 		std::cout << "Failed on create: SamplerState - " << sampler_state << std::endl;
 }
 
-void DirectX11::SetupBackBuffer(void)
+void DirectX11::BackBuffer2D(void)
 {
 	this->context_->OMSetRenderTargets(1, this->back_buffer_rtv_.GetAddressOf(), this->dsv_.Get());
 	this->context_->RSSetViewports(1, &this->viewport_);
 }
 
-void DirectX11::SetupDeffered(void)
+void DirectX11::BackBuffer3D(void)
+{
+	this->context_->OMSetRenderTargets(1, this->back_buffer_rtv_.GetAddressOf(), this->dsv_.Get());
+	this->context_->RSSetViewports(1, &this->viewport_);
+}
+
+void DirectX11::Deffered2D(void)
 {
 }
 
-void DirectX11::SetupShadowMap(void)
+void DirectX11::Deffered3D(void)
 {
 }
 
-void DirectX11::Setup2D(void)
-{
-
-}
-
-void DirectX11::Setup3D(void)
+void DirectX11::ShadowMap(void)
 {
 }
 
@@ -303,7 +299,7 @@ void DirectX11::Destroy(void)
 	delete this;
 }
 
-Graphics * Create(const Window * window)
+Graphics * const Create(Window * const window)
 {
 	return new DirectX11(window);
 }

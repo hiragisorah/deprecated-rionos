@@ -36,4 +36,4 @@ public:
 	void Destroy(void) override;
 };
 
-Window __declspec(dllexport) * Create(std::string caption = "window", unsigned int width = 1280U, unsigned int height = 720U);
+Window __declspec(dllexport) * const Create(std::string caption = "window", unsigned int width = 1280U, unsigned int height = 720U);

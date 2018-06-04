@@ -18,7 +18,7 @@ void Rionos::Destroy(void)
 	delete this;
 }
 
-Game * Create(void)
+Game * const Create(Graphics * const graphics)
 {
-	return new Rionos;
+	return new Rionos(graphics);
 }
