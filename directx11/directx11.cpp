@@ -35,6 +35,7 @@ void DirectX11::Initialize(void)
 	this->CreateViewPort();
 	this->CreateRasterizerStates();
 	this->CreateBlendStates();
+	this->CreateQuad();
 }
 
 void DirectX11::Finalize(void)
@@ -292,6 +293,47 @@ void DirectX11::Deffered3D(void)
 
 void DirectX11::ShadowMap(void)
 {
+}
+
+void DirectX11::CreateQuad(void)
+{
+	struct SimpleVertex
+	{
+		DirectX::XMFLOAT3 position_;
+		DirectX::XMFLOAT2 texcoord_;
+	};
+
+	auto x = 1.f;
+	auto y = 1.f;
+
+	SimpleVertex vertices[] =
+	{
+		DirectX::XMFLOAT3(-x / 2.f,-y / 2.f,0),DirectX::XMFLOAT2(0,0),//頂点1,
+		DirectX::XMFLOAT3(+x / 2.f,-y / 2.f,0), DirectX::XMFLOAT2(1,0),//頂点2
+		DirectX::XMFLOAT3(-x / 2.f,+y / 2.f,0),DirectX::XMFLOAT2(0,1), //頂点3
+		DirectX::XMFLOAT3(+x / 2.f,+y / 2.f,0),DirectX::XMFLOAT2(1,1), //頂点4
+	};
+
+	D3D11_BUFFER_DESC bd;
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(SimpleVertex) * (sizeof(vertices) / sizeof(vertices[0]));
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+	bd.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData;
+	InitData.pSysMem = vertices;
+
+	this->device_->CreateBuffer(&bd, &InitData, this->quad_vb_.GetAddressOf());
+}
+
+void DirectX11::DrawQuad(void)
+{
+	unsigned int stride = 20;
+	unsigned int offset = 0;
+	this->context_->IASetVertexBuffers(0, 1, this->quad_vb_.GetAddressOf(), &stride, &offset);
+	this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	this->context_->Draw(4, 0);
 }
 
 void DirectX11::Destroy(void)

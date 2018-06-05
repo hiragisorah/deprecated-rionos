@@ -69,6 +69,11 @@ public:
 	void Deffered3D(void) override;
 	void ShadowMap(void) override;
 
+private:
+	ComPtr<ID3D11Buffer> quad_vb_;
+	void CreateQuad(void);
+	void DrawQuad(void);
+
 public:
 	void Destroy(void) override;
 };

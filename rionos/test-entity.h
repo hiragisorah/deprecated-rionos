@@ -16,11 +16,11 @@ public:
 private:
 	void Initialize(void) override
 	{
-		std::cout << __FUNCTION__ << std::endl;
+
 		this->AddComponent<TestComponent>();
 	}
 	void Finalize(void) override
 	{
-		std::cout << __FUNCTION__ << std::endl;
+
 	}
 };

@@ -16,16 +16,16 @@ public:
 private:
 	void Initialize(void) override
 	{
-		std::cout << __FUNCTION__ << std::endl;
+
 	}
 	void Finalize(void) override {}
 	void Pause(void) override {}
 	void Update(void) override
 	{
-		std::cout << __FUNCTION__ << std::endl;
+		//auto & graphics = this->entity().lock()->scene().lock()->
 	}
 	void Always(void) override
 	{
-		std::cout << __FUNCTION__ << std::endl;
+
 	}
 };
