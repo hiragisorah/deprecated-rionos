@@ -1,5 +1,21 @@
 #include "directx11.h"
+
+#include <fstream>
 #include <iostream>
+
+#include <d3dcompiler.h>
+
+#include "WICTextureLoader.h"
+
+#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "directxtex.lib")
+
+#if defined(DEBUG) || defined(_DEBUG)
+constexpr DWORD SHADER_FLAGS = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+#else
+constexpr DWORD SHADER_FLAGS = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
 
 const ComPtr<ID3D11Device> & DirectX11::device(void)
 {
@@ -35,7 +51,6 @@ void DirectX11::Initialize(void)
 	this->CreateViewPort();
 	this->CreateRasterizerStates();
 	this->CreateBlendStates();
-	this->CreateQuad();
 }
 
 void DirectX11::Finalize(void)
@@ -56,57 +71,60 @@ void DirectX11::Present(void)
 
 void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 {
-	renderer;
-	//auto r = renderer.lock();
-	//auto & rm = ResourceManager::Get();
-	//auto & shader = rm.GetShader<Dx11Shader>(r->shader_);
+	auto r = renderer.lock();
+	auto shader = this->GetShader<Shader>(r->shader_);
 
-	//this->context_->RSSetState(this->rasterizer_states_[r->rasterizer_state_].Get());
+	this->context_->RSSetState(this->rasterizer_states_[r->rasterizer_state_].Get());
 
-	//this->context_->OMSetBlendState(this->blend_states_[r->blend_state_].Get(), nullptr, 0xffffffff);
+	this->context_->OMSetBlendState(this->blend_states_[r->blend_state_].Get(), nullptr, 0xffffffff);
 
-	//this->context_->PSSetSamplers(0, 1, this->sampler_states_[r->sampler_state_].GetAddressOf());
+	this->context_->PSSetSamplers(0, 1, this->sampler_states_[r->sampler_state_].GetAddressOf());
 
+	this->context_->VSSetShader(shader->vertex_shader_.Get(), nullptr, 0);
+	this->context_->GSSetShader(shader->geometry_shader_.Get(), nullptr, 0);
+	this->context_->HSSetShader(shader->hull_shader_.Get(), nullptr, 0);
+	this->context_->DSSetShader(shader->domain_shader_.Get(), nullptr, 0);
+	this->context_->PSSetShader(shader->pixel_shader_.Get(), nullptr, 0);
 
-	//this->context_->VSSetShader(shader->vertex_shader_.Get(), nullptr, 0);
-	//this->context_->GSSetShader(shader->geometry_shader_.Get(), nullptr, 0);
-	//this->context_->PSSetShader(shader->pixel_shader_.Get(), nullptr, 0);
+	this->context_->VSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+	this->context_->GSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+	this->context_->HSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+	this->context_->DSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+	this->context_->PSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
 
-	//this->context_->IASetInputLayout(shader->input_layout_.Get());
+	this->context_->UpdateSubresource(shader->constant_buffer_[0].Get(), 0, nullptr, r->constant_buffer_, 0, 0);
 
-	//unsigned int stride = 32U;
-	//unsigned int offset = 0;
+	this->context_->IASetInputLayout(shader->input_layout_.Get());
 
-	//this->context_->UpdateSubresource(shader->constant_buffer_[0].Get(), 0, nullptr, r->constant_buffer_, 0, 0);
+	if (r->draw_mode_ == DRAW_MODE_BACK_BUFFER_2D || r->draw_mode_ == DRAW_MODE_DEFFERED_2D)
+	{
+		unsigned int stride = 20U;
+		unsigned int offset = 0;
 
-	////このコンスタントバッファーをどのシェーダーで使うか
-	//this->context_->VSSetConstantBuffers(0, 1, shader->constant_buffer_[0].GetAddressOf());
-	//this->context_->GSSetConstantBuffers(0, 1, shader->constant_buffer_[0].GetAddressOf());
-	//this->context_->PSSetConstantBuffers(0, 1, shader->constant_buffer_[0].GetAddressOf());
+		auto & texture = this->GetTexture<DirectX11::Texture>(r->texture_2d_);
 
-	//if (r->draw_mode_ == DRAW_MODE_BACK_BUFFER_2D || r->draw_mode_ == DRAW_MODE_DEFFERED_2D)
-	//{
-	//	auto & texture = rm.GetTexture<Dx11Texture>(r->texture_2d_);
+		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	//	this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		this->context_->PSSetShaderResources(0, 1, texture->srv_.GetAddressOf());
+		this->context_->IASetVertexBuffers(0, 1, texture->vertex_buffer_.GetAddressOf(), &stride, &offset);
+		this->context_->Draw(4, 0);
+	}
+	else
+	{
+		unsigned int stride = 32U;
+		unsigned int offset = 0;
 
-	//	this->context_->PSSetShaderResources(0, 1, texture->srv_.GetAddressOf());
-	//	this->context_->IASetVertexBuffers(0, 1, texture->vertex_buffer_.GetAddressOf(), &stride, &offset);
-	//	this->context_->Draw(4, 0);
-	//}
-	//else
-	//{
-	//	auto & model = rm.GetModel<Dx11Model>(r->model_);
+		auto & model = this->GetModel<DirectX11::Model>(r->model_);
 
-	//	this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	//	for (auto & mesh : model->meshes_)
-	//	{
-	//		this->context_->IASetVertexBuffers(0, 1, mesh.vertex_buffer_.GetAddressOf(), &stride, &offset);
-	//		this->context_->IASetIndexBuffer(mesh.index_buffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
-	//		this->context_->DrawIndexed(mesh.index_cnt_, 0, 0);
-	//	}
-	//}
+		for (auto & mesh : model->meshes_)
+		{
+			this->context_->IASetVertexBuffers(0, 1, mesh.vertex_buffer_.GetAddressOf(), &stride, &offset);
+			this->context_->IASetIndexBuffer(mesh.index_buffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
+			this->context_->DrawIndexed(mesh.index_cnt_, 0, 0);
+		}
+	}
 }
 
 void DirectX11::CreateBackBuffer(void)
@@ -295,7 +313,77 @@ void DirectX11::ShadowMap(void)
 {
 }
 
-void DirectX11::CreateQuad(void)
+void DirectX11::LoadShader(const Resource::Shader::PATH & path, std::shared_ptr<IShader>& shader)
+{
+	auto s = std::make_shared<Shader>();
+	shader = s;
+
+	std::string p = Resource::Shader::paths[(unsigned int)path];
+
+	ID3DBlob * blob = nullptr;
+	ID3DBlob * error = nullptr;
+
+	if (FAILED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", SHADER_FLAGS, 0, &blob, &error)))
+	{
+		if (error != nullptr)
+			std::cout << __FUNCTION__ << " " << (char*)error->GetBufferPointer() << std::endl;
+		else
+			std::cout << __FUNCTION__ << " シェーダーの読み込みに失敗しました。" << std::endl;
+
+		return;
+	}
+	else
+	{
+		this->device_->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->vertex_shader_.GetAddressOf());
+		this->CreateInputLayoutAndConstantBufferFromShader(s, blob);
+	}
+
+	if (SUCCEEDED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE, "GS", "gs_5_0", SHADER_FLAGS, 0, &blob, &error)))
+	{
+		this->device_->CreateGeometryShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->geometry_shader_.GetAddressOf());
+	}
+
+	if (SUCCEEDED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE, "HS", "hs_5_0", SHADER_FLAGS, 0, &blob, &error)))
+	{
+		this->device_->CreateHullShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->hull_shader_.GetAddressOf());
+	}
+
+	if (SUCCEEDED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE, "DS", "ds_5_0", SHADER_FLAGS, 0, &blob, &error)))
+	{
+		this->device_->CreateDomainShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->domain_shader_.GetAddressOf());
+	}
+
+	if (SUCCEEDED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", SHADER_FLAGS, 0, &blob, &error)))
+	{
+		this->device_->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->pixel_shader_.GetAddressOf());
+	}
+}
+
+void DirectX11::CreateTexture(const std::shared_ptr<DirectX11::Texture> & texture, const Resource::Texture::PATH & path)
+{
+	ComPtr<ID3D11Resource> res;
+
+	std::string p = Resource::Texture::paths[(unsigned int)path];
+
+	std::wstring w_file_path = std::wstring(p.begin(), p.end());
+	DirectX::CreateWICTextureFromFile(this->device_.Get(), w_file_path.c_str(), res.GetAddressOf(), texture->srv_.GetAddressOf());
+
+	ComPtr<ID3D11Texture2D> tex;
+	res.As(&tex);
+	D3D11_TEXTURE2D_DESC desc;
+
+	tex->GetDesc(&desc);
+
+	texture->size_.x = static_cast<float>(desc.Width);
+	texture->size_.y = static_cast<float>(desc.Height);
+}
+
+void DirectX11::CreateVertexBufferFromTextureSize(const std::shared_ptr<DirectX11::Texture> & texture)
 {
 	struct SimpleVertex
 	{
@@ -303,8 +391,8 @@ void DirectX11::CreateQuad(void)
 		DirectX::XMFLOAT2 texcoord_;
 	};
 
-	auto x = 1.f;
-	auto y = 1.f;
+	auto & x = texture->size_.x;
+	auto & y = texture->size_.y;
 
 	SimpleVertex vertices[] =
 	{
@@ -323,17 +411,247 @@ void DirectX11::CreateQuad(void)
 
 	D3D11_SUBRESOURCE_DATA InitData;
 	InitData.pSysMem = vertices;
-
-	this->device_->CreateBuffer(&bd, &InitData, this->quad_vb_.GetAddressOf());
+	
+	this->device_->CreateBuffer(&bd, &InitData, texture->vertex_buffer_.GetAddressOf());
 }
 
-void DirectX11::DrawQuad(void)
+void DirectX11::LoadTexture(const Resource::Texture::PATH & path, std::shared_ptr<ITexture>& texture)
 {
-	unsigned int stride = 20;
-	unsigned int offset = 0;
-	this->context_->IASetVertexBuffers(0, 1, this->quad_vb_.GetAddressOf(), &stride, &offset);
-	this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	this->context_->Draw(4, 0);
+	auto dx_texture = std::make_shared<Texture>();
+	texture = dx_texture;
+
+	CreateTexture(dx_texture, path);
+	CreateVertexBufferFromTextureSize(dx_texture);
+}
+
+void DirectX11::LoadModel(const Resource::Model::PATH & path, std::shared_ptr<IModel>& model)
+{
+	auto dx_model = std::make_shared<DirectX11::Model>();
+	model = dx_model;
+
+	std::string file_path = Resource::Model::paths[(unsigned int)path];
+
+	struct Vertex
+	{
+		DirectX::XMFLOAT3 position_;
+		DirectX::XMFLOAT3 normal_;
+		DirectX::XMFLOAT2 uv_;
+	};
+
+	struct Mesh
+	{
+		std::string texture_;
+		std::vector<Vertex> vertices_;
+		std::vector<unsigned int> indices_;
+	};
+
+	std::vector<Mesh> meshes;
+
+	meshes.clear();
+
+	std::ifstream file;
+
+	file.open(file_path, std::ios::in | std::ios::binary);
+
+	if (file.fail())
+	{
+		std::cout << "モデルファイルの読み込みに失敗しました。" << std::endl;
+		return;
+	}
+
+	unsigned int mesh_cnt;
+
+	file.read(reinterpret_cast<char*>(&mesh_cnt), sizeof(unsigned int));
+
+	meshes.resize(mesh_cnt);
+	dx_model->meshes_.resize(mesh_cnt);
+
+	for (unsigned int m = 0; m < mesh_cnt; ++m)
+	{
+		auto & mesh = meshes[m];
+
+		unsigned int vtx_cnt = 0;
+
+		file.read(reinterpret_cast<char*>(&vtx_cnt), sizeof(unsigned int));
+
+		mesh.vertices_.resize(vtx_cnt);
+
+		for (unsigned int v = 0; v < vtx_cnt; ++v)
+		{
+			auto & vtx = mesh.vertices_[v];
+
+			file.read(reinterpret_cast<char*>(&vtx), sizeof(Vertex));
+		}
+
+		unsigned int index_cnt = 0;
+
+		file.read(reinterpret_cast<char*>(&index_cnt), sizeof(unsigned int));
+
+		mesh.indices_.resize(index_cnt);
+
+		for (unsigned int i = 0; i < index_cnt; ++i)
+		{
+			auto & index = mesh.indices_[i];
+
+			file.read(reinterpret_cast<char*>(&index), sizeof(unsigned int));
+		}
+
+		unsigned texture_str_cnt = 0;
+
+		file.read(reinterpret_cast<char*>(&texture_str_cnt), sizeof(unsigned int));
+
+		mesh.texture_.resize(texture_str_cnt);
+
+		if (texture_str_cnt > 0)
+		{
+			char * texture_str = new char[texture_str_cnt + 1];
+			file.read(&texture_str[0], sizeof(char) * texture_str_cnt);
+			texture_str[texture_str_cnt] = '\0';
+			mesh.texture_ = texture_str;
+			if (mesh.texture_.find(".") < mesh.texture_.size())
+				mesh.texture_ = mesh.texture_.substr(mesh.texture_.rfind("\\") + 1, mesh.texture_.size() - mesh.texture_.rfind("\\"));
+			else
+				mesh.texture_ = "";
+
+			delete[] texture_str;
+		}
+	}
+
+	file.close();
+
+	for (unsigned int n = 0; n < mesh_cnt; ++n)
+	{
+		if (meshes[n].texture_ != "")
+		{
+			auto dir = file_path;
+			dir.replace(dir.rfind("/"), dir.size() - dir.rfind("/"), "/" + meshes[n].texture_);
+			std::wstring w_file_path = std::wstring(dir.begin(), dir.end());
+			DirectX::CreateWICTextureFromFile(this->device_.Get(), w_file_path.c_str(), nullptr, dx_model->meshes_[n].srv_.GetAddressOf());
+		}
+
+		this->CreateVertexBuffer(dx_model->meshes_[n], meshes[n].vertices_);
+		this->CreateIndexBuffer(dx_model->meshes_[n], meshes[n].indices_);
+	}
+}
+
+void DirectX11::CreateInputLayoutAndConstantBufferFromShader(const std::shared_ptr<Shader>& shader, ID3DBlob * blob)
+{
+	ID3D11ShaderReflection * reflector = nullptr;
+	D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflector);
+
+	D3D11_SHADER_DESC shader_desc;
+	reflector->GetDesc(&shader_desc);
+
+	shader->constant_buffer_.resize(shader_desc.ConstantBuffers);
+
+	for (unsigned int n = 0; n < shader_desc.ConstantBuffers; ++n)
+	{
+		int size = 0;
+		auto cb = reflector->GetConstantBufferByIndex(n);
+		D3D11_SHADER_BUFFER_DESC desc;
+		cb->GetDesc(&desc);
+
+		for (size_t j = 0; j < desc.Variables; ++j)
+		{
+			auto v = cb->GetVariableByIndex(j);
+			D3D11_SHADER_VARIABLE_DESC vdesc;
+			v->GetDesc(&vdesc);
+			if (vdesc.Size % 16)
+				size += vdesc.Size + 16 - (vdesc.Size % 16);
+			else
+				size += vdesc.Size;
+		}
+
+		D3D11_BUFFER_DESC bd;
+		bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		bd.ByteWidth = size;
+		bd.CPUAccessFlags = 0;
+		bd.MiscFlags = 0;
+		bd.StructureByteStride = 0;
+		bd.Usage = D3D11_USAGE_DEFAULT;
+
+		if (FAILED(this->device_->CreateBuffer(&bd, nullptr, shader->constant_buffer_[n].GetAddressOf())))
+			std::cout << "コンスタントバッファーの作成に失敗しました。" << std::endl;
+	}
+
+	std::vector<D3D11_INPUT_ELEMENT_DESC> element;
+	for (unsigned int i = 0; i < shader_desc.InputParameters; ++i) {
+		D3D11_SIGNATURE_PARAMETER_DESC sigdesc;
+		reflector->GetInputParameterDesc(i, &sigdesc);
+
+		auto format = GetDxgiFormat(sigdesc.ComponentType, sigdesc.Mask);
+
+		D3D11_INPUT_ELEMENT_DESC eledesc =
+		{
+			sigdesc.SemanticName
+			, sigdesc.SemanticIndex
+			, format
+			, 0
+			, D3D11_APPEND_ALIGNED_ELEMENT
+			, D3D11_INPUT_PER_VERTEX_DATA
+			, 0
+		};
+
+		element.emplace_back(eledesc);
+	}
+
+	if (!element.empty())
+		if (FAILED(this->device_->CreateInputLayout(&element[0], element.size(),
+			blob->GetBufferPointer(), blob->GetBufferSize(), shader->input_layout_.GetAddressOf())))
+			std::cout << "インプットレイアウトの作成に失敗しました。" << std::endl;
+}
+
+DXGI_FORMAT DirectX11::GetDxgiFormat(D3D_REGISTER_COMPONENT_TYPE type, BYTE mask)
+{
+	if (mask == 0x0F)
+	{
+		// xyzw
+		switch (type)
+		{
+		case D3D_REGISTER_COMPONENT_FLOAT32:
+			return DXGI_FORMAT_R32G32B32A32_FLOAT;
+		case D3D_REGISTER_COMPONENT_UINT32:
+			return DXGI_FORMAT_R32G32B32A32_UINT;
+		}
+	}
+
+	if (mask == 0x07)
+	{
+		// xyz
+		switch (type)
+		{
+		case D3D_REGISTER_COMPONENT_FLOAT32:
+			return DXGI_FORMAT_R32G32B32_FLOAT;
+		case D3D_REGISTER_COMPONENT_UINT32:
+			return DXGI_FORMAT_R32G32B32_UINT;
+		}
+	}
+
+	if (mask == 0x3)
+	{
+		// xy
+		switch (type)
+		{
+		case D3D_REGISTER_COMPONENT_FLOAT32:
+			return DXGI_FORMAT_R32G32_FLOAT;
+		case D3D_REGISTER_COMPONENT_UINT32:
+			return DXGI_FORMAT_R32G32_UINT;
+		}
+	}
+
+	if (mask == 0x1)
+	{
+		// x
+		switch (type)
+		{
+		case D3D_REGISTER_COMPONENT_FLOAT32:
+			return DXGI_FORMAT_R32_FLOAT;
+		case D3D_REGISTER_COMPONENT_UINT32:
+			return DXGI_FORMAT_R32_UINT;
+		}
+	}
+
+	return DXGI_FORMAT_UNKNOWN;
 }
 
 void DirectX11::Destroy(void)

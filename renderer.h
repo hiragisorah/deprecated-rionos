@@ -1,6 +1,6 @@
 #pragma once
 
-//#include "..\resource.h"
+#include "resource.h"
 
 enum DRAW_MODE
 {
@@ -47,9 +47,9 @@ struct Renderer
 		, rasterizer_state_(RASTERIZER_STATE_CCW)
 		, blend_state_(BLEND_STATE_OPAQUE)
 		, sampler_state_(SAMPLER_STATE_POINT_WRAP)
-		//, shader_(Resource::Shader::PATH::shader_3d)
-		//, texture_2d_(Resource::Texture::PATH::explosion)
-		//, model_(Resource::Model::PATH::jeep)
+		, shader_(Resource::Shader::PATH::shader_3d)
+		, texture_2d_(Resource::Texture::PATH::explosion)
+		, model_(Resource::Model::PATH::jeep)
 		, constant_buffer_(nullptr)
 	{}
 
@@ -57,8 +57,8 @@ struct Renderer
 	RASTERIZER_STATE rasterizer_state_;
 	BLEND_STATE blend_state_;
 	SAMPLER_STATE sampler_state_;
-	//Resource::Texture::PATH texture_2d_;
-	//Resource::Shader::PATH shader_;
-	//Resource::Model::PATH model_;
+	Resource::Texture::PATH texture_2d_;
+	Resource::Shader::PATH shader_;
+	Resource::Model::PATH model_;
 	void * constant_buffer_;
 };

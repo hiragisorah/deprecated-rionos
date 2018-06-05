@@ -15,6 +15,39 @@ using namespace Microsoft::WRL;
 class __declspec(dllexport) DirectX11 : public Graphics
 {
 public:
+	struct Shader : public IShader
+	{
+		ComPtr<ID3D11VertexShader> vertex_shader_;
+		ComPtr<ID3D11GeometryShader> geometry_shader_;
+		ComPtr<ID3D11HullShader> hull_shader_;
+		ComPtr<ID3D11DomainShader> domain_shader_;
+		ComPtr<ID3D11PixelShader> pixel_shader_;
+		ComPtr<ID3D11InputLayout> input_layout_;
+		std::vector<ComPtr<ID3D11Buffer>> constant_buffer_;
+	};
+	struct Texture : public ITexture
+	{
+		ComPtr<ID3D11ShaderResourceView> srv_;
+		ComPtr<ID3D11Buffer> vertex_buffer_;
+	};
+	struct Model : public IModel
+	{
+		struct Mesh
+		{
+			ComPtr<ID3D11ShaderResourceView> srv_;
+			ComPtr<ID3D11Buffer> vertex_buffer_;
+			ComPtr<ID3D11Buffer> index_buffer_;
+			unsigned int index_cnt_;
+
+			Mesh(void)
+				: index_cnt_(0U)
+			{}
+		};
+
+		std::vector<Mesh> meshes_;
+	};
+
+public:
 	DirectX11(Window * const window)
 		: Graphics(window)
 		, frame_rate_(FRAME_RATE_LIMITED)
@@ -69,10 +102,42 @@ public:
 	void Deffered3D(void) override;
 	void ShadowMap(void) override;
 
+public:
+	void LoadShader(const Resource::Shader::PATH & path, std::shared_ptr<IShader> & shader) override;
+	void LoadTexture(const Resource::Texture::PATH & path, std::shared_ptr<ITexture> & texture) override;
+	void LoadModel(const Resource::Model::PATH & path, std::shared_ptr<IModel> & model) override;
+
 private:
-	ComPtr<ID3D11Buffer> quad_vb_;
-	void CreateQuad(void);
-	void DrawQuad(void);
+	void CreateInputLayoutAndConstantBufferFromShader(const std::shared_ptr<Shader> & shader, ID3DBlob * blob);
+	DXGI_FORMAT GetDxgiFormat(D3D_REGISTER_COMPONENT_TYPE type, BYTE mask);
+	template<class _Vertex> void CreateVertexBuffer(DirectX11::Model::Mesh & mesh, std::vector<_Vertex> & vertices)
+	{
+		D3D11_BUFFER_DESC bd = {};
+		bd.ByteWidth = vertices.size() * sizeof(_Vertex);
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.Usage = D3D11_USAGE_DEFAULT;
+
+		D3D11_SUBRESOURCE_DATA sd = {};
+		sd.pSysMem = vertices.data();
+
+		this->device_->CreateBuffer(&bd, &sd, mesh.vertex_buffer_.GetAddressOf());
+	}
+	template<class _Index> void CreateIndexBuffer(DirectX11::Model::Mesh & mesh, std::vector<_Index> & indices)
+	{
+		mesh.index_cnt_ = indices.size();
+
+		D3D11_BUFFER_DESC bd = {};
+		bd.ByteWidth = mesh.index_cnt_ * sizeof(_Index);
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		bd.Usage = D3D11_USAGE_DEFAULT;
+
+		D3D11_SUBRESOURCE_DATA sd = {};
+		sd.pSysMem = indices.data();
+
+		this->device_->CreateBuffer(&bd, &sd, mesh.index_buffer_.GetAddressOf());
+	}
+	void CreateTexture(const std::shared_ptr<DirectX11::Texture> & texture, const Resource::Texture::PATH & path);
+	void CreateVertexBufferFromTextureSize(const std::shared_ptr<DirectX11::Texture> & texture);
 
 public:
 	void Destroy(void) override;

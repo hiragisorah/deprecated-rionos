@@ -18,7 +18,9 @@ public:
 private:
 	void Initialize(void) override
 	{
-		std::cout << __FUNCTION__ << std::endl;
+		this->graphics()->LoadShader(Resource::Shader::PATH::shader_3d);
+		this->graphics()->LoadModel(Resource::Model::PATH::jeep);
+
 		this->AddChild<TestEntity>();
 	}
 	void Finalize(void) override {}

@@ -20,9 +20,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "path-manager", "path-manager\path-manager.vcxproj", "{F83090B5-446C-42F6-9712-DA337C5EBB8F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rionos", "rionos\rionos.vcxproj", "{039198C2-F5C3-40D8-81DB-977859D8D472}"
-	ProjectSection(ProjectDependencies) = postProject
-		{489E408A-6AE4-403F-8C5A-12D44032F9E3} = {489E408A-6AE4-403F-8C5A-12D44032F9E3}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "seed-engine", "seed-engine\seed-engine.vcxproj", "{A9592008-558C-429F-B439-46317A809501}"
 EndProject
