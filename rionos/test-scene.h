@@ -18,8 +18,8 @@ public:
 private:
 	void Initialize(void) override
 	{
-		this->graphics()->LoadShader(Resource::Shader::PATH::shader_3d);
-		this->graphics()->LoadModel(Resource::Model::PATH::jeep);
+		this->graphics()->LoadShader(Resource::Shader::PATH::tesselation);
+		this->graphics()->LoadTexture(Resource::Texture::PATH::taisetsu);
 
 		this->AddChild<TestEntity>();
 	}

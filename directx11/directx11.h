@@ -82,6 +82,7 @@ private:
 	ComPtr<ID3D11RasterizerState> rasterizer_states_[RASTERIZER_STATE_NUM];
 	ComPtr<ID3D11BlendState> blend_states_[BLEND_STATE_NUM];
 	ComPtr<ID3D11SamplerState> sampler_states_[SAMPLER_STATE_NUM];
+	ComPtr<ID3D11Buffer> quad_vb_;
 
 private:
 	void CreateBackBuffer(void);
@@ -90,6 +91,7 @@ private:
 	void CreateRasterizerStates(void);
 	void CreateBlendStates(void);
 	void CreateSamplerStates(void);
+	void CreateQuad(void);
 
 private:
 	void CreateBlendState(D3D11_BLEND src_blend, D3D11_BLEND dest_blend, BLEND_STATE blend_state);
@@ -98,9 +100,12 @@ private:
 public:
 	void BackBuffer2D(void) override;
 	void BackBuffer3D(void) override;
+	void BackBufferDisplacement(void) override;
 	void Deffered2D(void) override;
 	void Deffered3D(void) override;
+	void DefferedDisplacement(void) override;
 	void ShadowMap(void) override;
+	void ShadowMapDisplacement(void) override;
 
 public:
 	void LoadShader(const Resource::Shader::PATH & path, std::shared_ptr<IShader> & shader) override;

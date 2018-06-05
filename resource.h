@@ -58,11 +58,13 @@ namespace Resource
 		{
 			"Resource/Shader/shader_2d.hlsl",
 			"Resource/Shader/shader_3d.hlsl",
+			"Resource/Shader/tesselation.hlsl",
 		};
 		enum class PATH
 		{
 			shader_2d,
 			shader_3d,
+			tesselation,
 		};
 	}
 	namespace Texture
@@ -72,12 +74,14 @@ namespace Resource
 			"Resource/Texture/cube.png",
 			"Resource/Texture/explosion.png",
 			"Resource/Texture/rot.png",
+			"Resource/Texture/taisetsu.TIF",
 		};
 		enum class PATH
 		{
 			cube,
 			explosion,
 			rot,
+			taisetsu,
 		};
 	}
 }

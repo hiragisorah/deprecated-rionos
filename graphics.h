@@ -56,9 +56,12 @@ public:
 public:
 	virtual void BackBuffer2D(void) = 0;
 	virtual void BackBuffer3D(void) = 0;
+	virtual void BackBufferDisplacement(void) = 0;
 	virtual void Deffered2D(void) = 0;
 	virtual void Deffered3D(void) = 0;
+	virtual void DefferedDisplacement(void) = 0;
 	virtual void ShadowMap(void) = 0;
+	virtual void ShadowMapDisplacement(void) = 0;
 
 	// DB
 private:

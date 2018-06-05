@@ -23,9 +23,37 @@ bool Graphics::Run(void)
 			this->Rendering(renderer);
 	}
 
+	this->ShadowMapDisplacement();
+
+	draw_list = this->renderer_list_[DRAW_MODE_SHADOW_MAP_DISP];
+
+	for (unsigned int n = 0; n < draw_list.size(); ++n)
+	{
+		auto & renderer = draw_list[n];
+
+		if (renderer.expired())
+			draw_list.erase(draw_list.begin() + n);
+		else
+			this->Rendering(renderer);
+	}
+
 	this->Deffered3D();
 
 	draw_list = this->renderer_list_[DRAW_MODE_DEFFERED_3D];
+
+	for (unsigned int n = 0; n < draw_list.size(); ++n)
+	{
+		auto & renderer = draw_list[n];
+
+		if (renderer.expired())
+			draw_list.erase(draw_list.begin() + n);
+		else
+			this->Rendering(renderer);
+	}
+
+	this->DefferedDisplacement();
+
+	draw_list = this->renderer_list_[DRAW_MODE_DEFFERED_DISP];
 
 	for (unsigned int n = 0; n < draw_list.size(); ++n)
 	{
@@ -54,6 +82,20 @@ bool Graphics::Run(void)
 	this->BackBuffer3D();
 
 	draw_list = this->renderer_list_[DRAW_MODE_BACK_BUFFER_3D];
+
+	for (unsigned int n = 0; n < draw_list.size(); ++n)
+	{
+		auto & renderer = draw_list[n];
+
+		if (renderer.expired())
+			draw_list.erase(draw_list.begin() + n);
+		else
+			this->Rendering(renderer);
+	}
+
+	this->BackBufferDisplacement();
+
+	draw_list = this->renderer_list_[DRAW_MODE_BACK_BUFFER_DISP];
 
 	for (unsigned int n = 0; n < draw_list.size(); ++n)
 	{

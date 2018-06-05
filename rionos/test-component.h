@@ -31,7 +31,7 @@ private:
 		this->renderer_ = std::make_shared<Renderer>();
 
 		this->cbuffer_.world_ = DirectX::XMMatrixIdentity();
-		this->cbuffer_.view_ = DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0, 70.f, -70.f, 0), DirectX::XMVectorZero(), DirectX::XMVectorSet(0.f, 1.f, 0.f, 0.f));
+		this->cbuffer_.view_ = DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0, 7.f, -7.f, 0), DirectX::XMVectorZero(), DirectX::XMVectorSet(0.f, 1.f, 0.f, 0.f));
 		this->cbuffer_.projection_ = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, 1920.f / 720.f, 0.1f, 1000.f);
 
 		this->renderer_->constant_buffer_ = &this->cbuffer_;

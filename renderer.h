@@ -6,9 +6,12 @@ enum DRAW_MODE
 {
 	DRAW_MODE_BACK_BUFFER_2D,
 	DRAW_MODE_BACK_BUFFER_3D,
+	DRAW_MODE_BACK_BUFFER_DISP,
 	DRAW_MODE_DEFFERED_2D,
 	DRAW_MODE_DEFFERED_3D,
-	DRAW_MODE_SHADOW_MAP
+	DRAW_MODE_DEFFERED_DISP,
+	DRAW_MODE_SHADOW_MAP,
+	DRAW_MODE_SHADOW_MAP_DISP
 };
 
 enum RASTERIZER_STATE
@@ -43,12 +46,12 @@ enum SAMPLER_STATE
 struct Renderer
 {
 	Renderer(void)
-		: draw_mode_(DRAW_MODE_BACK_BUFFER_3D)
-		, rasterizer_state_(RASTERIZER_STATE_CCW)
+		: draw_mode_(DRAW_MODE_BACK_BUFFER_DISP)
+		, rasterizer_state_(RASTERIZER_STATE_CW)
 		, blend_state_(BLEND_STATE_OPAQUE)
 		, sampler_state_(SAMPLER_STATE_POINT_WRAP)
-		, shader_(Resource::Shader::PATH::shader_3d)
-		, texture_2d_(Resource::Texture::PATH::explosion)
+		, shader_(Resource::Shader::PATH::tesselation)
+		, texture_2d_(Resource::Texture::PATH::taisetsu)
 		, model_(Resource::Model::PATH::jeep)
 		, constant_buffer_(nullptr)
 	{}

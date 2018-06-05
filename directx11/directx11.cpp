@@ -51,6 +51,7 @@ void DirectX11::Initialize(void)
 	this->CreateViewPort();
 	this->CreateRasterizerStates();
 	this->CreateBlendStates();
+	this->CreateQuad();
 }
 
 void DirectX11::Finalize(void)
@@ -86,17 +87,20 @@ void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 	this->context_->DSSetShader(shader->domain_shader_.Get(), nullptr, 0);
 	this->context_->PSSetShader(shader->pixel_shader_.Get(), nullptr, 0);
 
-	this->context_->VSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
-	this->context_->GSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
-	this->context_->HSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
-	this->context_->DSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
-	this->context_->PSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
-
-	this->context_->UpdateSubresource(shader->constant_buffer_[0].Get(), 0, nullptr, r->constant_buffer_, 0, 0);
+	if (shader->constant_buffer_.size())
+	{
+		this->context_->VSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+		this->context_->GSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+		this->context_->HSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+		this->context_->DSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+		this->context_->PSSetConstantBuffers(0, shader->constant_buffer_.size(), shader->constant_buffer_[0].GetAddressOf());
+		this->context_->UpdateSubresource(shader->constant_buffer_[0].Get(), 0, nullptr, r->constant_buffer_, 0, 0);
+	}
 
 	this->context_->IASetInputLayout(shader->input_layout_.Get());
 
-	if (r->draw_mode_ == DRAW_MODE_BACK_BUFFER_2D || r->draw_mode_ == DRAW_MODE_DEFFERED_2D)
+	if (r->draw_mode_ == DRAW_MODE_BACK_BUFFER_2D || r->draw_mode_ == DRAW_MODE_DEFFERED_2D
+		|| r->draw_mode_ == DRAW_MODE_BACK_BUFFER_DISP || r->draw_mode_ == DRAW_MODE_DEFFERED_DISP || r->draw_mode_ == DRAW_MODE_SHADOW_MAP_DISP)
 	{
 		unsigned int stride = 20U;
 		unsigned int offset = 0;
@@ -249,6 +253,35 @@ void DirectX11::CreateSamplerStates(void)
 	this->CreateSamplerState(D3D11_FILTER_ANISOTROPIC, D3D11_TEXTURE_ADDRESS_CLAMP, SAMPLER_STATE_POINT_CLAMP);
 }
 
+void DirectX11::CreateQuad(void)
+{
+	struct Vtx
+	{
+		DirectX::XMFLOAT3 position_;
+		DirectX::XMFLOAT2 uv_;
+	};
+
+	//頂点を定義
+	Vtx vertices[] =
+	{
+		DirectX::XMFLOAT3(-1, 0,1),DirectX::XMFLOAT2(0,0),
+		DirectX::XMFLOAT3(1, 0,1),DirectX::XMFLOAT2(0,1),
+		DirectX::XMFLOAT3(1, 0,-1),DirectX::XMFLOAT2(1,1),
+		DirectX::XMFLOAT3(-1, 0, -1),DirectX::XMFLOAT2(1,0),
+	};
+	//上の頂点でバーテックスバッファー作成
+	D3D11_BUFFER_DESC bd;
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(Vtx) * 4;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+	bd.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData;
+	InitData.pSysMem = vertices;
+	this->device_->CreateBuffer(&bd, &InitData, &this->quad_vb_);
+}
+
 void DirectX11::CreateBlendState(D3D11_BLEND src_blend, D3D11_BLEND dest_blend, BLEND_STATE blend_state)
 {
 	D3D11_BLEND_DESC desc = {};
@@ -301,6 +334,12 @@ void DirectX11::BackBuffer3D(void)
 	this->context_->RSSetViewports(1, &this->viewport_);
 }
 
+void DirectX11::BackBufferDisplacement(void)
+{
+	this->context_->OMSetRenderTargets(1, this->back_buffer_rtv_.GetAddressOf(), this->dsv_.Get());
+	this->context_->RSSetViewports(1, &this->viewport_);
+}
+
 void DirectX11::Deffered2D(void)
 {
 }
@@ -309,8 +348,20 @@ void DirectX11::Deffered3D(void)
 {
 }
 
+void DirectX11::DefferedDisplacement(void)
+{
+	this->context_->OMSetRenderTargets(1, this->back_buffer_rtv_.GetAddressOf(), this->dsv_.Get());
+	this->context_->RSSetViewports(1, &this->viewport_);
+}
+
 void DirectX11::ShadowMap(void)
 {
+}
+
+void DirectX11::ShadowMapDisplacement(void)
+{
+	this->context_->OMSetRenderTargets(1, this->back_buffer_rtv_.GetAddressOf(), this->dsv_.Get());
+	this->context_->RSSetViewports(1, &this->viewport_);
 }
 
 void DirectX11::LoadShader(const Resource::Shader::PATH & path, std::shared_ptr<IShader>& shader)
@@ -411,7 +462,7 @@ void DirectX11::CreateVertexBufferFromTextureSize(const std::shared_ptr<DirectX1
 
 	D3D11_SUBRESOURCE_DATA InitData;
 	InitData.pSysMem = vertices;
-	
+
 	this->device_->CreateBuffer(&bd, &InitData, texture->vertex_buffer_.GetAddressOf());
 }
 
