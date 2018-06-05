@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ヘッダー ファイル\component">
+      <UniqueIdentifier>{6e84c31c-5e36-44b4-89b1-50f71810ab7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\entity">
+      <UniqueIdentifier>{3ff6a15e-fa8c-4d7f-be36-505834528628}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\scene">
+      <UniqueIdentifier>{a65e560c-9100-460e-a656-c388fd9342d4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="rionos.cpp">
@@ -32,13 +41,13 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="test-scene.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\scene</Filter>
     </ClInclude>
     <ClInclude Include="test-entity.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\entity</Filter>
     </ClInclude>
     <ClInclude Include="test-component.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\component</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -41,6 +41,16 @@ std::shared_ptr<Seed::Scene>& Seed::Scene::next_scene(void)
 	return this->next_scene_;
 }
 
+Graphics * const Seed::Scene::graphics(void)
+{
+	return this->graphics_;
+}
+
+void Seed::Scene::set_graphics(Graphics * const graphics)
+{
+	this->graphics_ = graphics;
+}
+
 void Seed::Scene::PauseChildList(void)
 {
 	this->PauseSystemList();

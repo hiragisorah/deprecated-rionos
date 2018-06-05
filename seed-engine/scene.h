@@ -5,6 +5,8 @@
 #include <typeinfo>
 #include <unordered_map>
 
+#include "..\graphics.h"
+
 #include "entity.h"
 #include "system.h"
 
@@ -50,6 +52,14 @@ namespace Seed
 			this->AlwaysSystemList();
 			this->AlwaysChildList();
 		}
+
+		// グラフィックス
+	private:
+		Graphics * graphics_;
+
+	public:
+		Graphics * const graphics(void);
+		void set_graphics(Graphics * const graphics);
 
 		// 次シーン
 	private:
