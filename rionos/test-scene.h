@@ -19,8 +19,10 @@ private:
 	void Initialize(void) override
 	{
 		this->graphics()->LoadShader(Resource::Shader::PATH::tesselation);
+		this->graphics()->LoadShader(Resource::Shader::PATH::shader_3d);
 		this->graphics()->LoadTexture(Resource::Texture::PATH::taisetsu);
-
+		this->graphics()->LoadTexture(Resource::Texture::PATH::Simple);
+		this->graphics()->LoadModel(Resource::Model::PATH::kaoru);
 		this->AddChild<TestEntity>();
 	}
 	void Finalize(void) override {}

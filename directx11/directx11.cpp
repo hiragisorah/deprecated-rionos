@@ -52,6 +52,7 @@ void DirectX11::Initialize(void)
 	this->CreateRasterizerStates();
 	this->CreateBlendStates();
 	this->CreateQuad();
+	this->CreateMesh();
 }
 
 void DirectX11::Finalize(void)
@@ -77,7 +78,7 @@ void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 
 	this->context_->RSSetState(this->rasterizer_states_[r->rasterizer_state_].Get());
 
-	this->context_->OMSetBlendState(this->blend_states_[r->blend_state_].Get(), nullptr, 0xffffffff);
+	//this->context_->OMSetBlendState(this->blend_states_[r->blend_state_].Get(), nullptr, 0xffffffff);
 
 	this->context_->PSSetSamplers(0, 1, this->sampler_states_[r->sampler_state_].GetAddressOf());
 
@@ -107,14 +108,28 @@ void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 
 		auto & texture = this->GetTexture<DirectX11::Texture>(r->texture_2d_);
 
-		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
 
+		this->context_->HSSetShaderResources(0, 1, texture->srv_.GetAddressOf());
+		this->context_->DSSetShaderResources(0, 1, texture->srv_.GetAddressOf());
 		this->context_->PSSetShaderResources(0, 1, texture->srv_.GetAddressOf());
-		this->context_->IASetVertexBuffers(0, 1, texture->vertex_buffer_.GetAddressOf(), &stride, &offset);
+
+		this->context_->IASetVertexBuffers(0, 1, this->quad_vb_.GetAddressOf(), &stride, &offset);
 		this->context_->Draw(4, 0);
 	}
 	else
 	{
+		/*auto & mesh = this->field_.meshes_[0];
+
+		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+		unsigned int stride = 32U;
+		unsigned int offset = 0;
+
+		this->context_->IASetVertexBuffers(0, 1, mesh.vertex_buffer_.GetAddressOf(), &stride, &offset);
+		this->context_->IASetIndexBuffer(mesh.index_buffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
+		this->context_->DrawIndexed(mesh.index_cnt_, 0, 0);*/
+
 		unsigned int stride = 32U;
 		unsigned int offset = 0;
 
@@ -247,10 +262,10 @@ void DirectX11::CreateSamplerStates(void)
 {
 	this->CreateSamplerState(D3D11_FILTER_MIN_MAG_MIP_POINT, D3D11_TEXTURE_ADDRESS_WRAP, SAMPLER_STATE_POINT_WRAP);
 	this->CreateSamplerState(D3D11_FILTER_MIN_MAG_MIP_POINT, D3D11_TEXTURE_ADDRESS_CLAMP, SAMPLER_STATE_POINT_CLAMP);
-	this->CreateSamplerState(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, SAMPLER_STATE_POINT_WRAP);
-	this->CreateSamplerState(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP, SAMPLER_STATE_POINT_CLAMP);
-	this->CreateSamplerState(D3D11_FILTER_ANISOTROPIC, D3D11_TEXTURE_ADDRESS_WRAP, SAMPLER_STATE_POINT_WRAP);
-	this->CreateSamplerState(D3D11_FILTER_ANISOTROPIC, D3D11_TEXTURE_ADDRESS_CLAMP, SAMPLER_STATE_POINT_CLAMP);
+	this->CreateSamplerState(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, SAMPLER_STATE_LINEAR_WRAP);
+	this->CreateSamplerState(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP, SAMPLER_STATE_LINEAR_CLAMP);
+	this->CreateSamplerState(D3D11_FILTER_ANISOTROPIC, D3D11_TEXTURE_ADDRESS_WRAP, SAMPLER_STATE_ANISOTROPIC_WRAP);
+	this->CreateSamplerState(D3D11_FILTER_ANISOTROPIC, D3D11_TEXTURE_ADDRESS_CLAMP, SAMPLER_STATE_ANISOTROPIC_CLAMP);
 }
 
 void DirectX11::CreateQuad(void)
@@ -280,6 +295,38 @@ void DirectX11::CreateQuad(void)
 	D3D11_SUBRESOURCE_DATA InitData;
 	InitData.pSysMem = vertices;
 	this->device_->CreateBuffer(&bd, &InitData, &this->quad_vb_);
+}
+
+using namespace DirectX;
+
+void DirectX11::CreateMesh(void)
+{
+	this->vertices_.emplace_back(XMFLOAT3(0, 0, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(0, 0, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(1, 0.5f, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(1, 0.5f, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(2, 0.8f, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(2, 0.8f, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(3, 0.5f, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(3, 0.5f, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(4, 0, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	this->vertices_.emplace_back(XMFLOAT3(4, 0, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+	
+	this->indices_.emplace_back(0);
+	this->indices_.emplace_back(1);
+	this->indices_.emplace_back(2);
+	this->indices_.emplace_back(3);
+	this->indices_.emplace_back(4);
+	this->indices_.emplace_back(5);
+	this->indices_.emplace_back(6);
+	this->indices_.emplace_back(7);
+	this->indices_.emplace_back(8);
+	this->indices_.emplace_back(9);
+
+	this->field_.meshes_.resize(1);
+
+	this->CreateVertexBuffer(this->field_.meshes_[0], this->vertices_);
+	this->CreateIndexBuffer(this->field_.meshes_[0], this->indices_);
 }
 
 void DirectX11::CreateBlendState(D3D11_BLEND src_blend, D3D11_BLEND dest_blend, BLEND_STATE blend_state)
@@ -313,6 +360,8 @@ void DirectX11::CreateSamplerState(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MO
 
 	desc.MaxAnisotropy = (this->device_->GetFeatureLevel() > D3D_FEATURE_LEVEL_9_1) ? D3D11_MAX_MAXANISOTROPY : 2;
 
+	desc.MaxAnisotropy = 16;
+	desc.MinLOD = 0;
 	desc.MaxLOD = FLT_MAX;
 	desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
@@ -426,9 +475,42 @@ void DirectX11::CreateTexture(const std::shared_ptr<DirectX11::Texture> & textur
 
 	ComPtr<ID3D11Texture2D> tex;
 	res.As(&tex);
+	
 	D3D11_TEXTURE2D_DESC desc;
 
 	tex->GetDesc(&desc);
+
+	{
+		ComPtr<ID3D11Texture2D> new_tex;
+		D3D11_TEXTURE2D_DESC new_desc = {};
+		tex->GetDesc(&new_desc);
+		new_desc.BindFlags = 0;
+		new_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+		new_desc.Usage = D3D11_USAGE_STAGING;
+		new_desc.MiscFlags = 0;
+		this->device_->CreateTexture2D(&new_desc, nullptr, new_tex.GetAddressOf());
+		this->context_->CopyResource(new_tex.Get(), tex.Get());
+		D3D11_MAPPED_SUBRESOURCE mapped = {};
+		unsigned int subres = D3D11CalcSubresource(0, 0, 0);
+		this->context_->Map(new_tex.Get(), subres, D3D11_MAP_READ, 0, &mapped);
+		const std::uint8_t * sptr = reinterpret_cast<const uint8_t*>(mapped.pData);
+		for (unsigned int row = 0; row < new_desc.Height; row++)
+		{
+			unsigned int row_start = row * mapped.RowPitch;
+			for (unsigned int col = 0; col < new_desc.Width; col++)
+			{
+				unsigned int col_start = col * 4;
+
+				byte R = sptr[row_start + col_start + 0];
+				byte G = sptr[row_start + col_start + 1];
+				byte B = sptr[row_start + col_start + 2];
+				byte A = sptr[row_start + col_start + 3];
+
+				texture->pixels_.emplace_back((int)((R+G+B+A) / 4));
+			}
+		}
+		this->context_->Unmap(res.Get(), 0);
+	}
 
 	texture->size_.x = static_cast<float>(desc.Width);
 	texture->size_.y = static_cast<float>(desc.Height);

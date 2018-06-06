@@ -78,6 +78,20 @@ private:
 
 	D3D11_VIEWPORT viewport_;
 
+	struct SimpleVertex
+	{
+		SimpleVertex(DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 normal, DirectX::XMFLOAT2 uv)
+			: position_(position), normal_(normal), uv_(uv) {}
+		DirectX::XMFLOAT3 position_;
+		DirectX::XMFLOAT3 normal_;
+		DirectX::XMFLOAT2 uv_;
+	};
+
+public:
+	std::vector<SimpleVertex> vertices_;
+	std::vector<unsigned int> indices_;
+	Model field_;
+
 private:
 	ComPtr<ID3D11RasterizerState> rasterizer_states_[RASTERIZER_STATE_NUM];
 	ComPtr<ID3D11BlendState> blend_states_[BLEND_STATE_NUM];
@@ -92,6 +106,7 @@ private:
 	void CreateBlendStates(void);
 	void CreateSamplerStates(void);
 	void CreateQuad(void);
+	void CreateMesh(void);
 
 private:
 	void CreateBlendState(D3D11_BLEND src_blend, D3D11_BLEND dest_blend, BLEND_STATE blend_state);

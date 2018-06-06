@@ -26,6 +26,7 @@ struct ITexture
 	{}
 
 	DirectX::XMFLOAT2 size_;
+	std::vector<unsigned int> pixels_;
 };
 struct IModel {};
 

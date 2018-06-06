@@ -47,11 +47,11 @@ struct Renderer
 {
 	Renderer(void)
 		: draw_mode_(DRAW_MODE_BACK_BUFFER_DISP)
-		, rasterizer_state_(RASTERIZER_STATE_CW)
+		, rasterizer_state_(RASTERIZER_STATE_CULL_NONE)
 		, blend_state_(BLEND_STATE_OPAQUE)
 		, sampler_state_(SAMPLER_STATE_POINT_WRAP)
 		, shader_(Resource::Shader::PATH::tesselation)
-		, texture_2d_(Resource::Texture::PATH::taisetsu)
+		, texture_2d_(Resource::Texture::PATH::Simple)
 		, model_(Resource::Model::PATH::jeep)
 		, constant_buffer_(nullptr)
 	{}

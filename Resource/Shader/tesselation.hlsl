@@ -2,10 +2,18 @@ Texture2D g_HeightTexture : register(t0);
 
 SamplerState g_samPoint : register(s0);
 
+cbuffer unique : register(b0)
+{
+    row_major matrix g_world;
+    row_major matrix g_view;
+    row_major matrix g_proj;
+};
+
 struct VS_OUTPUT
 {
-    float3 position_ : POSITION;
-    float2 uv_: TEXCOORD0;
+    float3 pos : POSITION0;
+    float3 pos_ : POSITION1;
+    float2 uv : TEXCOORD0;
 };
 
 struct HS_CONSTANT_OUTPUT
@@ -16,27 +24,29 @@ struct HS_CONSTANT_OUTPUT
 
 struct HS_OUTPUT
 {
-    float3 position_ : POSITION;
-    float2 uv_: TEXCOORD0;
+    float3 pos : POSITION;
+    float2 uv : TEXCOORD0;
 };
 
 struct DS_OUTPUT
 {
-    float4 position_ : SV_POSITION;
-    float2 uv_: TEXCOORD0;
+    float4 pos : SV_POSITION;
+    float2 uv : TEXCOORD0;
 };
 
 //
 //
 //
-VS_OUTPUT VS(float3 position_ : POSITION, float2 uv_: TEXCOORD0)
+VS_OUTPUT VS(float3 pos : POSITION, float2 uv : TEXCOORD0)
 {
-    VS_OUTPUT output;
+    matrix wvp = mul(g_world, mul(g_view, g_proj));
 
-    output.position_ = position_;
-    output.uv_ = uv_;
+    VS_OUTPUT Out;
+    Out.pos = pos;
+    Out.pos_ = mul(pos, (float3x3) wvp);
+    Out.uv = uv;
 
-    return output;
+    return Out;
 }
 //
 //
@@ -44,7 +54,7 @@ VS_OUTPUT VS(float3 position_ : POSITION, float2 uv_: TEXCOORD0)
 HS_CONSTANT_OUTPUT HSConstant(InputPatch<VS_OUTPUT, 4> ip, uint pid : SV_PrimitiveID)
 {
     HS_CONSTANT_OUTPUT Out;
-    float divide = 64;
+    float divide = 1280;
 
     Out.factor[0] = divide;
     Out.factor[1] = divide;
@@ -67,8 +77,8 @@ HS_CONSTANT_OUTPUT HSConstant(InputPatch<VS_OUTPUT, 4> ip, uint pid : SV_Primiti
 HS_OUTPUT HS(InputPatch<VS_OUTPUT, 4> ip, uint cpid : SV_OutputControlPointID, uint pid : SV_PrimitiveID)
 {
     HS_OUTPUT Out;
-    Out.position_ = ip[cpid].position_;
-    Out.uv_= ip[cpid].uv_;
+    Out.pos = ip[cpid].pos;
+    Out.uv = ip[cpid].uv;
 
     return Out;
 }
@@ -78,22 +88,22 @@ HS_OUTPUT HS(InputPatch<VS_OUTPUT, 4> ip, uint cpid : SV_OutputControlPointID, u
 [domain("quad")]
 DS_OUTPUT DS(HS_CONSTANT_OUTPUT In, float2 UV : SV_DomaInLocation, const OutputPatch<HS_OUTPUT, 4> patch)
 {
-    //matrix wvp = mul(g_world, mul(g_view, g_proj));
-
     DS_OUTPUT Out;
 
-    float2 top_uv_= lerp(patch[0].uv_, patch[1].uv_, UV.x);
-    float2 bottom_uv_= lerp(patch[3].uv_, patch[2].uv_, UV.x);
-    float2 uv_= float2(lerp(top_uv_, bottom_uv_, UV.y));
-    Out.uv_= uv_;
+    matrix wvp = mul(g_world, mul(g_view, g_proj));
 
-    float4 height = g_HeightTexture.SampleLevel(g_samPoint, uv_, 0) / 4;
+    float2 top_uv = lerp(patch[0].uv, patch[1].uv, UV.x);
+    float2 bottom_uv = lerp(patch[3].uv, patch[2].uv, UV.x);
+    float2 uv = float2(lerp(top_uv, bottom_uv, UV.y));
+    Out.uv = uv;
 
-    float3 top_position_ = lerp(patch[0].position_, patch[1].position_, UV.x);
-    float3 bottom_position_ = lerp(patch[3].position_, patch[2].position_, UV.x);
-    Out.position_ = float4(lerp(top_position_, bottom_position_, UV.y), 1);
-    Out.position_.y += height.x;
-    //Out.position_ = mul(Out.position_, wvp);
+    float4 height = g_HeightTexture.SampleLevel(g_samPoint, uv, 0) / 4;
+
+    float3 top_pos = lerp(patch[0].pos, patch[1].pos, UV.x);
+    float3 bottom_pos = lerp(patch[3].pos, patch[2].pos, UV.x);
+    Out.pos = float4(lerp(top_pos, bottom_pos, UV.y), 1);
+    Out.pos.y += height.x;
+    Out.pos = mul(Out.pos, wvp);
 
     return Out;
 }
@@ -102,7 +112,6 @@ DS_OUTPUT DS(HS_CONSTANT_OUTPUT In, float2 UV : SV_DomaInLocation, const OutputP
 //
 float4 PS(DS_OUTPUT In) : SV_Target
 {
-    float4 col = g_HeightTexture.SampleLevel(g_samPoint, In.uv_, 0);
+    float4 col = g_HeightTexture.SampleLevel(g_samPoint, In.uv, 0);
     return col;
 }
-
