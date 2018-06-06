@@ -75,6 +75,7 @@ namespace Resource
 			"Resource/Texture/explosion.png",
 			"Resource/Texture/rot.png",
 			"Resource/Texture/Simple.tif",
+			"Resource/Texture/Simple_normal.tif",
 			"Resource/Texture/taisetsu.TIF",
 		};
 		enum class PATH
@@ -83,6 +84,7 @@ namespace Resource
 			explosion,
 			rot,
 			Simple,
+			Simple_normal,
 			taisetsu,
 		};
 	}
