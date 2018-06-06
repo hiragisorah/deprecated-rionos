@@ -106,7 +106,6 @@ private:
 	void CreateBlendStates(void);
 	void CreateSamplerStates(void);
 	void CreateQuad(void);
-	void CreateMesh(void);
 
 private:
 	void CreateBlendState(D3D11_BLEND src_blend, D3D11_BLEND dest_blend, BLEND_STATE blend_state);

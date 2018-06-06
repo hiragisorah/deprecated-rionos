@@ -52,11 +52,6 @@ void DirectX11::Initialize(void)
 	this->CreateRasterizerStates();
 	this->CreateBlendStates();
 	this->CreateQuad();
-	this->CreateMesh();
-
-	Graphics::LoadTexture(Resource::Texture::PATH::Simple_normal);
-	auto tex = this->GetTexture<DirectX11::Texture>(Resource::Texture::PATH::Simple_normal);
-	this->context_->DSSetShaderResources(1	, 1, tex->srv_.GetAddressOf());
 }
 
 void DirectX11::Finalize(void)
@@ -82,7 +77,7 @@ void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 
 	this->context_->RSSetState(this->rasterizer_states_[r->rasterizer_state_].Get());
 
-	//this->context_->OMSetBlendState(this->blend_states_[r->blend_state_].Get(), nullptr, 0xffffffff);
+	this->context_->OMSetBlendState(this->blend_states_[r->blend_state_].Get(), nullptr, 0xffffffff);
 
 	this->context_->PSSetSamplers(0, 1, this->sampler_states_[r->sampler_state_].GetAddressOf());
 
@@ -104,36 +99,48 @@ void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 
 	this->context_->IASetInputLayout(shader->input_layout_.Get());
 
-	if (r->draw_mode_ == DRAW_MODE_BACK_BUFFER_2D || r->draw_mode_ == DRAW_MODE_DEFFERED_2D
-		|| r->draw_mode_ == DRAW_MODE_BACK_BUFFER_DISP || r->draw_mode_ == DRAW_MODE_DEFFERED_DISP || r->draw_mode_ == DRAW_MODE_SHADOW_MAP_DISP)
+	if (r->draw_mode_ == DRAW_MODE_BACK_BUFFER_2D || r->draw_mode_ == DRAW_MODE_DEFFERED_2D)
 	{
 		unsigned int stride = 20U;
 		unsigned int offset = 0;
 
-		auto & texture = this->GetTexture<DirectX11::Texture>(r->texture_2d_);
+		auto & texture = this->GetTexture<DirectX11::Texture>(r->texture_2d_[0]);
+
+		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+		for (unsigned int n = 0; n < r->texture_2d_.size(); ++n)
+		{
+			auto tex = this->GetTexture<DirectX11::Texture>(r->texture_2d_[n]);
+
+			this->context_->HSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
+			this->context_->DSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
+			this->context_->PSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
+		}
+
+		this->context_->IASetVertexBuffers(0, 1, texture->vertex_buffer_.GetAddressOf(), &stride, &offset);
+		this->context_->Draw(4, 0);
+	}
+	else if (r->draw_mode_ == DRAW_MODE_BACK_BUFFER_DISP || r->draw_mode_ == DRAW_MODE_DEFFERED_DISP || r->draw_mode_ == DRAW_MODE_SHADOW_MAP_DISP)
+	{
+		unsigned int stride = 20U;
+		unsigned int offset = 0;
 
 		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
 
-		this->context_->HSSetShaderResources(0, 1, texture->srv_.GetAddressOf());
-		this->context_->DSSetShaderResources(0, 1, texture->srv_.GetAddressOf());
-		this->context_->PSSetShaderResources(0, 1, texture->srv_.GetAddressOf());
+		for (unsigned int n = 0; n < r->texture_2d_.size(); ++n)
+		{
+			auto tex = this->GetTexture<DirectX11::Texture>(r->texture_2d_[n]);
+
+			this->context_->HSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
+			this->context_->DSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
+			this->context_->PSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
+		}
 
 		this->context_->IASetVertexBuffers(0, 1, this->quad_vb_.GetAddressOf(), &stride, &offset);
 		this->context_->Draw(4, 0);
 	}
 	else
 	{
-		/*auto & mesh = this->field_.meshes_[0];
-
-		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-		unsigned int stride = 32U;
-		unsigned int offset = 0;
-
-		this->context_->IASetVertexBuffers(0, 1, mesh.vertex_buffer_.GetAddressOf(), &stride, &offset);
-		this->context_->IASetIndexBuffer(mesh.index_buffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
-		this->context_->DrawIndexed(mesh.index_cnt_, 0, 0);*/
-
 		unsigned int stride = 32U;
 		unsigned int offset = 0;
 
@@ -283,11 +290,12 @@ void DirectX11::CreateQuad(void)
 	//頂点を定義
 	Vtx vertices[] =
 	{
-		DirectX::XMFLOAT3(-1, 0,1),DirectX::XMFLOAT2(0,0),
-		DirectX::XMFLOAT3(1, 0,1),DirectX::XMFLOAT2(0,1),
-		DirectX::XMFLOAT3(1, 0,-1),DirectX::XMFLOAT2(1,1),
+		DirectX::XMFLOAT3(-1, 0, +1),DirectX::XMFLOAT2(0,0),
+		DirectX::XMFLOAT3(+1, 0, +1),DirectX::XMFLOAT2(0,1),
+		DirectX::XMFLOAT3(+1, 0, -1),DirectX::XMFLOAT2(1,1),
 		DirectX::XMFLOAT3(-1, 0, -1),DirectX::XMFLOAT2(1,0),
 	};
+
 	//上の頂点でバーテックスバッファー作成
 	D3D11_BUFFER_DESC bd;
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -299,38 +307,6 @@ void DirectX11::CreateQuad(void)
 	D3D11_SUBRESOURCE_DATA InitData;
 	InitData.pSysMem = vertices;
 	this->device_->CreateBuffer(&bd, &InitData, &this->quad_vb_);
-}
-
-using namespace DirectX;
-
-void DirectX11::CreateMesh(void)
-{
-	this->vertices_.emplace_back(XMFLOAT3(0, 0, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(0, 0, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(1, 0.5f, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(1, 0.5f, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(2, 0.8f, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(2, 0.8f, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(3, 0.5f, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(3, 0.5f, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(4, 0, 3), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	this->vertices_.emplace_back(XMFLOAT3(4, 0, 4), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
-	
-	this->indices_.emplace_back(0);
-	this->indices_.emplace_back(1);
-	this->indices_.emplace_back(2);
-	this->indices_.emplace_back(3);
-	this->indices_.emplace_back(4);
-	this->indices_.emplace_back(5);
-	this->indices_.emplace_back(6);
-	this->indices_.emplace_back(7);
-	this->indices_.emplace_back(8);
-	this->indices_.emplace_back(9);
-
-	this->field_.meshes_.resize(1);
-
-	this->CreateVertexBuffer(this->field_.meshes_[0], this->vertices_);
-	this->CreateIndexBuffer(this->field_.meshes_[0], this->indices_);
 }
 
 void DirectX11::CreateBlendState(D3D11_BLEND src_blend, D3D11_BLEND dest_blend, BLEND_STATE blend_state)
@@ -533,10 +509,10 @@ void DirectX11::CreateVertexBufferFromTextureSize(const std::shared_ptr<DirectX1
 
 	SimpleVertex vertices[] =
 	{
-		DirectX::XMFLOAT3(-x / 2.f,-y / 2.f,0),DirectX::XMFLOAT2(0,0),//頂点1,
-		DirectX::XMFLOAT3(+x / 2.f,-y / 2.f,0), DirectX::XMFLOAT2(1,0),//頂点2
-		DirectX::XMFLOAT3(-x / 2.f,+y / 2.f,0),DirectX::XMFLOAT2(0,1), //頂点3
-		DirectX::XMFLOAT3(+x / 2.f,+y / 2.f,0),DirectX::XMFLOAT2(1,1), //頂点4
+		DirectX::XMFLOAT3(-x / 2.f, 0, +y / 2.f),DirectX::XMFLOAT2(0,1), //頂点3
+		DirectX::XMFLOAT3(+x / 2.f, 0, +y / 2.f),DirectX::XMFLOAT2(1,1), //頂点4
+		DirectX::XMFLOAT3(+x / 2.f, 0, -y / 2.f), DirectX::XMFLOAT2(1,0),//頂点2
+		DirectX::XMFLOAT3(-x / 2.f, 0, -y / 2.f),DirectX::XMFLOAT2(0,0),//頂点1,
 	};
 
 	D3D11_BUFFER_DESC bd;
