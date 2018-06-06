@@ -1,4 +1,5 @@
 Texture2D g_HeightTexture : register(t0);
+Texture2D g_NormalTexture : register(t1);
 
 SamplerState g_samPoint : register(s0);
 
@@ -32,6 +33,7 @@ struct DS_OUTPUT
 {
     float4 pos : SV_POSITION;
     float2 uv : TEXCOORD0;
+    float LdotN : TEXCOORD1;
 };
 
 //
@@ -105,6 +107,13 @@ DS_OUTPUT DS(HS_CONSTANT_OUTPUT In, float2 UV : SV_DomaInLocation, const OutputP
     Out.pos.y += height.x;
     Out.pos = mul(Out.pos, wvp);
 
+    float4 normal = normalize(g_NormalTexture.SampleLevel(g_samPoint, uv, 0) * 2 - 1);
+
+    normal.w = 0;
+    normal = mul(normal, g_world);
+
+    Out.LdotN = dot(normal, float4(1, 0, 1, 1));
+
     return Out;
 }
 //
@@ -113,5 +122,8 @@ DS_OUTPUT DS(HS_CONSTANT_OUTPUT In, float2 UV : SV_DomaInLocation, const OutputP
 float4 PS(DS_OUTPUT In) : SV_Target
 {
     float4 col = g_HeightTexture.SampleLevel(g_samPoint, In.uv, 0);
+
+    col.rgb *= In.LdotN;
+
     return col;
 }

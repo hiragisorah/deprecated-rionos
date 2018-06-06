@@ -53,6 +53,10 @@ void DirectX11::Initialize(void)
 	this->CreateBlendStates();
 	this->CreateQuad();
 	this->CreateMesh();
+
+	Graphics::LoadTexture(Resource::Texture::PATH::Simple_normal);
+	auto tex = this->GetTexture<DirectX11::Texture>(Resource::Texture::PATH::Simple_normal);
+	this->context_->DSSetShaderResources(1	, 1, tex->srv_.GetAddressOf());
 }
 
 void DirectX11::Finalize(void)
