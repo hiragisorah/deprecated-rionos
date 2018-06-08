@@ -30,6 +30,9 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="transform.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="rionos.def">
@@ -43,10 +46,19 @@
     <ClInclude Include="test-scene.h">
       <Filter>ヘッダー ファイル\scene</Filter>
     </ClInclude>
-    <ClInclude Include="test-entity.h">
+    <ClInclude Include="field-collision.h">
+      <Filter>ヘッダー ファイル\component</Filter>
+    </ClInclude>
+    <ClInclude Include="transform.h">
+      <Filter>ヘッダー ファイル\component</Filter>
+    </ClInclude>
+    <ClInclude Include="field.h">
       <Filter>ヘッダー ファイル\entity</Filter>
     </ClInclude>
-    <ClInclude Include="test-component.h">
+    <ClInclude Include="player.h">
+      <Filter>ヘッダー ファイル\entity</Filter>
+    </ClInclude>
+    <ClInclude Include="displacement-field.h">
       <Filter>ヘッダー ファイル\component</Filter>
     </ClInclude>
   </ItemGroup>

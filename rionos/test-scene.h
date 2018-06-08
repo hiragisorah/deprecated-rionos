@@ -4,7 +4,8 @@
 
 #include "..\seed-engine\scene.h"
 
-#include "test-entity.h"
+#include "player.h"
+#include"field.h"
 
 class TestScene : public Seed::Scene
 {
@@ -24,7 +25,8 @@ private:
 		this->graphics()->LoadTexture(TexturePath::Simple);
 		this->graphics()->LoadTexture(TexturePath::Simple_normal);
 		this->graphics()->LoadModel(ModelPath::kaoru);
-		this->AddChild<TestEntity>();
+		this->AddChild<Player>();
+		this->AddChild<Field>();
 	}
 	void Finalize(void) override {}
 };

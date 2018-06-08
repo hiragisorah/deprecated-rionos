@@ -27,7 +27,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -122,15 +122,19 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="rionos.cpp" />
+    <ClCompile Include="transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rionos.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="displacement-field.h" />
+    <ClInclude Include="field-collision.h" />
+    <ClInclude Include="field.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="rionos.h" />
-    <ClInclude Include="test-component.h" />
-    <ClInclude Include="test-entity.h" />
     <ClInclude Include="test-scene.h" />
+    <ClInclude Include="transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\seed-engine\seed-engine.vcxproj">
