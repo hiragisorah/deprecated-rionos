@@ -106,9 +106,10 @@ namespace Seed
 		template<class _System, class ... Args> void AddSystem(const Args &... args)
 		{
 			auto system_name = typeid(_System).name();
-			auto system = this->system_list_[system_name];
+			auto & system = this->system_list_[system_name];
 			this->system_list_[system_name] = std::make_shared<_System>(system, args ...);
-			system->set_entity(this->self_());
+			system->set_scene(this->self_);
+			system->Initalize();
 		}
 		template<class _System> const std::weak_ptr<_System> GetSystem(void)
 		{

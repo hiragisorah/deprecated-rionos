@@ -4,8 +4,9 @@
 
 #include "..\seed-engine\scene.h"
 
+#include "camera.h"
 #include "player.h"
-#include"field.h"
+#include "field.h"
 
 class TestScene : public Seed::Scene
 {
@@ -25,6 +26,9 @@ private:
 		this->graphics()->LoadTexture(TexturePath::Simple);
 		this->graphics()->LoadTexture(TexturePath::Simple_normal);
 		this->graphics()->LoadModel(ModelPath::kaoru);
+
+		this->AddSystem<Camera>();
+
 		this->AddChild<Player>();
 		this->AddChild<Field>();
 	}

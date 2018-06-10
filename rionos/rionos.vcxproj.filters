@@ -22,6 +22,15 @@
     <Filter Include="ヘッダー ファイル\scene">
       <UniqueIdentifier>{a65e560c-9100-460e-a656-c388fd9342d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\component">
+      <UniqueIdentifier>{aa8ca78b-5c3f-4344-931f-50a88e32093d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\system">
+      <UniqueIdentifier>{14d31788-4c7e-48e7-bc8f-4a34270d42ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\system">
+      <UniqueIdentifier>{55a865ab-5d0e-485d-a2b2-617288d3b26c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="rionos.cpp">
@@ -31,7 +40,16 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="transform.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\component</Filter>
+    </ClCompile>
+    <ClCompile Include="displacement-field.cpp">
+      <Filter>ソース ファイル\component</Filter>
+    </ClCompile>
+    <ClCompile Include="field-collision.cpp">
+      <Filter>ソース ファイル\component</Filter>
+    </ClCompile>
+    <ClCompile Include="camera.cpp">
+      <Filter>ソース ファイル\system</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +78,9 @@
     </ClInclude>
     <ClInclude Include="displacement-field.h">
       <Filter>ヘッダー ファイル\component</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>ヘッダー ファイル\system</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
