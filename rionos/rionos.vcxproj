@@ -121,9 +121,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="camera.cpp" />
+    <ClCompile Include="character-model.cpp" />
     <ClCompile Include="displacement-field.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="field-collision.cpp" />
+    <ClCompile Include="player_movement.cpp" />
     <ClCompile Include="rionos.cpp" />
     <ClCompile Include="transform.cpp" />
   </ItemGroup>
@@ -132,10 +134,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
+    <ClInclude Include="character-model.h" />
     <ClInclude Include="displacement-field.h" />
     <ClInclude Include="field-collision.h" />
     <ClInclude Include="field.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="player_movement.h" />
     <ClInclude Include="rionos.h" />
     <ClInclude Include="test-scene.h" />
     <ClInclude Include="transform.h" />

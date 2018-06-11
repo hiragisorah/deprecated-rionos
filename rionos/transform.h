@@ -18,6 +18,10 @@ private:
 	DirectX::XMFLOAT3 rotation_;
 	DirectX::XMFLOAT3 scale_;
 
+	DirectX::XMFLOAT3 old_position_;
+	DirectX::XMFLOAT3 old_rotation_;
+	DirectX::XMFLOAT3 old_scale_;
+
 public:
 	const DirectX::XMFLOAT3 & position(void) const;
 	const DirectX::XMFLOAT3 & rotation(void) const;
@@ -32,9 +36,9 @@ public:
 	DirectX::XMMATRIX GetTransformMatrix(void);
 
 private:
-	void Initialize(void) override {}
-	void Finalize(void) override {}
-	void Pause(void) override {}
-	void Update(void) override {}
-	void Always(void) override {}
+	void Initialize(void) override;
+	void Finalize(void) override;
+	void Pause(void) override;
+	void Update(void) override;
+	void Always(void) override;
 };

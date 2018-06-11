@@ -3,24 +3,6 @@
 
 void FieldCollision::Initialize(void)
 {
-	auto & transform = this->entity().lock()->GetComponent<Transform>();
-	auto & camera = this->entity().lock()->scene().lock()->GetSystem<Camera>();
-
-	transform.lock()->set_scale(DirectX::XMFLOAT3(0.015f, 0.015f, 0.015f));
-
-	this->player_ = std::make_shared<Renderer>();
-
-	this->p_cbuffer_.world_ = transform.lock()->GetTransformMatrix();
-	this->p_cbuffer_.view_ = camera.lock()->view();
-	this->p_cbuffer_.projection_ = camera.lock()->projection();
-
-	this->player_->constant_buffer_ = &this->p_cbuffer_;
-
-	this->player_->draw_mode_ = DRAW_MODE_BACK_BUFFER_3D;
-	this->player_->model_ = ModelPath::kaoru;
-	this->player_->shader_ = ShaderPath::shader_3d;
-
-	this->entity().lock()->scene().lock()->graphics()->AddRenderer(this->player_);
 }
 
 void FieldCollision::Finalize(void)
@@ -41,17 +23,7 @@ void FieldCollision::Update(void)
 
 	auto new_pos_x = position.x + 0.005f * x;
 
-	if (new_pos_x > .95f)
-		new_pos_x = .95f;
-	if (new_pos_x < -.95f)
-		new_pos_x = -.95f;
-
 	auto new_pos_z = position.z + 0.005f * z;
-
-	if (new_pos_z > .95f)
-		new_pos_z = .95f;
-	if (new_pos_z < -.95f)
-		new_pos_z = -.95f;
 
 	DirectX::XMFLOAT3 new_pos = { new_pos_x, 0, new_pos_z };
 
@@ -77,9 +49,7 @@ void FieldCollision::Update(void)
 	auto new_height = (float)GetHeightFromPos(new_pos) / 1000.f;
 
 	if (fabsf(position.y - new_height) < 0.09f)
-		transform.lock()->set_position({ new_pos_x, new_height, new_pos_z });
-
-	this->p_cbuffer_.world_ = DirectX::XMMatrixScaling(0.015f, 0.015f, 0.015f) * DirectX::XMMatrixTranslation(position.x, position.y, position.z);
+		transform.lock()->set_position({ position.x + x * 0.005f, new_height, new_pos_z + z * 0.005f });
 }
 
 void FieldCollision::Always(void)
@@ -88,6 +58,21 @@ void FieldCollision::Always(void)
 
 unsigned int FieldCollision::GetHeightFromPos(DirectX::XMFLOAT3 pos)
 {
+	if (pos.x > +.95f)
+		pos.x = +.95f;
+	if (pos.x < -.95f)
+		pos.x = -.95f;
+
+	if (pos.y > +.95f)
+		pos.y = +.95f;
+	if (pos.y < -.95f)
+		pos.y = -.95f;
+
+	if (pos.z > +.95f)
+		pos.z = +.95f;
+	if (pos.z < -.95f)
+		pos.z = -.95f;
+
 	return GetHeightFromUV(GetUvFromPos(pos));
 }
 

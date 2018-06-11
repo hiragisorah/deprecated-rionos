@@ -36,3 +36,26 @@ DirectX::XMMATRIX Transform::GetTransformMatrix(void)
 		* DirectX::XMMatrixRotationRollPitchYaw(this->rotation_.y, this->rotation_.z, this->rotation_.x)
 		* DirectX::XMMatrixTranslation(this->position_.x, this->position_.y, this->position_.z);
 }
+
+void Transform::Initialize(void)
+{
+}
+
+void Transform::Finalize(void)
+{
+}
+
+void Transform::Pause(void)
+{
+}
+
+void Transform::Update(void)
+{
+}
+
+void Transform::Always(void)
+{
+	this->old_position_ = this->position_;
+	this->old_rotation_ = this->rotation_;
+	this->old_scale_ = this->scale_;
+}
