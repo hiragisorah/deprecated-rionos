@@ -3,23 +3,18 @@
 #include <fstream>
 #include <iostream>
 
-#include <d3dcompiler.h>
-
-#include "WICTextureLoader.h"
-
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "directxtex.lib")
 
-#if defined(DEBUG) || defined(_DEBUG)
-constexpr DWORD SHADER_FLAGS = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
-#else
-constexpr DWORD SHADER_FLAGS = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-
-const ComPtr<ID3D11Device> & DirectX11::device(void)
+const ComPtr<ID3D11Device> & DirectX11::device(void) const
 {
 	return this->device_;
+}
+
+const ComPtr<ID3D11DeviceContext> & DirectX11::context(void) const
+{
+	return this->context_;
 }
 
 void DirectX11::Initialize(void)
@@ -28,13 +23,13 @@ void DirectX11::Initialize(void)
 	DXGI_SWAP_CHAIN_DESC sd;
 	memset(&sd, 0, sizeof(sd));
 	sd.BufferCount = 1;
-	sd.BufferDesc.Width = this->window_->width();
-	sd.BufferDesc.Height = this->window_->height();
+	sd.BufferDesc.Width = this->window()->width();
+	sd.BufferDesc.Height = this->window()->height();
 	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	sd.BufferDesc.RefreshRate.Numerator = 60;
 	sd.BufferDesc.RefreshRate.Denominator = 1;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.OutputWindow = this->window_->hwnd();
+	sd.OutputWindow = this->window()->hwnd();
 	sd.SampleDesc.Count = 1;
 	sd.SampleDesc.Quality = 0;
 	sd.Windowed = true;
@@ -73,7 +68,7 @@ void DirectX11::Present(void)
 void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 {
 	auto r = renderer.lock();
-	auto shader = this->GetShader<Shader>(r->shader_);
+	auto shader = this->shader_manager()->Get<Shader>(r->shader_);
 
 	this->context_->RSSetState(this->rasterizer_states_[r->rasterizer_state_].Get());
 
@@ -104,13 +99,13 @@ void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 		unsigned int stride = 20U;
 		unsigned int offset = 0;
 
-		auto & texture = this->GetTexture<DirectX11::Texture>(r->texture_2d_[0]);
+		auto & texture = this->texture_manager_->Get<Texture>(r->texture_2d_[0]);
 
 		this->context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 		for (unsigned int n = 0; n < r->texture_2d_.size(); ++n)
 		{
-			auto tex = this->GetTexture<DirectX11::Texture>(r->texture_2d_[n]);
+			auto tex = this->texture_manager_->Get<Texture>(r->texture_2d_[n]);
 
 			this->context_->HSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
 			this->context_->DSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
@@ -129,7 +124,7 @@ void DirectX11::Rendering(const std::weak_ptr<Renderer>& renderer)
 
 		for (unsigned int n = 0; n < r->texture_2d_.size(); ++n)
 		{
-			auto tex = this->GetTexture<DirectX11::Texture>(r->texture_2d_[n]);
+			auto tex = this->texture_manager_->Get<Texture>(r->texture_2d_[n]);
 
 			this->context_->HSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
 			this->context_->DSSetShaderResources(n, 1, tex->srv_.GetAddressOf());
@@ -174,8 +169,8 @@ void DirectX11::CreateDepthStencilView(void)
 
 	//深度マップテクスチャをレンダーターゲットにする際のデプスステンシルビュー用のテクスチャーを作成
 	D3D11_TEXTURE2D_DESC tex_desc = {};
-	tex_desc.Width = this->window_->width();
-	tex_desc.Height = this->window_->height();
+	tex_desc.Width = this->window()->width();
+	tex_desc.Height = this->window()->height();
 	tex_desc.MipLevels = 1;
 	tex_desc.ArraySize = 1;
 	tex_desc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -194,8 +189,8 @@ void DirectX11::CreateViewPort(void)
 {
 	auto & vp = this->viewport_;
 
-	vp.Width = this->window_->width<float>();
-	vp.Height = this->window_->height<float>();
+	vp.Width = this->window()->width<float>();
+	vp.Height = this->window()->height<float>();
 	vp.MinDepth = 0.f;
 	vp.MaxDepth = 1.f;
 	vp.TopLeftX = 0.f;
@@ -409,150 +404,6 @@ struct Bone
 	DirectX::XMMATRIX init_;
 };
 
-void DirectX11::LoadShader(const Resource::Shader::PATH & path, std::shared_ptr<IShader>& shader)
-{
-	auto s = std::make_shared<Shader>();
-	shader = s;
-
-	std::string p = Resource::Shader::paths[(unsigned int)path];
-
-	ID3DBlob * blob = nullptr;
-	ID3DBlob * error = nullptr;
-
-	if (FAILED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", SHADER_FLAGS, 0, &blob, &error)))
-	{
-		if (error != nullptr)
-			std::cout << __FUNCTION__ << " " << (char*)error->GetBufferPointer() << std::endl;
-		else
-			std::cout << __FUNCTION__ << " シェーダーの読み込みに失敗しました。" << std::endl;
-
-		return;
-	}
-	else
-	{
-		this->device_->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->vertex_shader_.GetAddressOf());
-		this->CreateInputLayoutAndConstantBufferFromShader(s, blob);
-	}
-
-	if (SUCCEEDED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE, "GS", "gs_5_0", SHADER_FLAGS, 0, &blob, &error)))
-	{
-		this->device_->CreateGeometryShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->geometry_shader_.GetAddressOf());
-	}
-
-	if (SUCCEEDED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE, "HS", "hs_5_0", SHADER_FLAGS, 0, &blob, &error)))
-	{
-		this->device_->CreateHullShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->hull_shader_.GetAddressOf());
-	}
-
-	if (SUCCEEDED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE, "DS", "ds_5_0", SHADER_FLAGS, 0, &blob, &error)))
-	{
-		this->device_->CreateDomainShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->domain_shader_.GetAddressOf());
-	}
-
-	if (SUCCEEDED(D3DCompileFromFile(std::wstring(p.begin(), p.end()).c_str(), nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_5_0", SHADER_FLAGS, 0, &blob, &error)))
-	{
-		this->device_->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, s->pixel_shader_.GetAddressOf());
-	}
-}
-
-void DirectX11::CreateTexture(const std::shared_ptr<DirectX11::Texture> & texture, const Resource::Texture::PATH & path)
-{
-	ComPtr<ID3D11Resource> res;
-
-	std::string p = Resource::Texture::paths[(unsigned int)path];
-
-	std::wstring w_file_path = std::wstring(p.begin(), p.end());
-	DirectX::CreateWICTextureFromFile(this->device_.Get(), w_file_path.c_str(), res.GetAddressOf(), texture->srv_.GetAddressOf());
-
-	ComPtr<ID3D11Texture2D> tex;
-	res.As(&tex);
-	
-	D3D11_TEXTURE2D_DESC desc;
-
-	tex->GetDesc(&desc);
-
-	{
-		ComPtr<ID3D11Texture2D> new_tex;
-		D3D11_TEXTURE2D_DESC new_desc = {};
-		tex->GetDesc(&new_desc);
-		new_desc.BindFlags = 0;
-		new_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-		new_desc.Usage = D3D11_USAGE_STAGING;
-		new_desc.MiscFlags = 0;
-		this->device_->CreateTexture2D(&new_desc, nullptr, new_tex.GetAddressOf());
-		this->context_->CopyResource(new_tex.Get(), tex.Get());
-		D3D11_MAPPED_SUBRESOURCE mapped = {};
-		unsigned int subres = D3D11CalcSubresource(0, 0, 0);
-		this->context_->Map(new_tex.Get(), subres, D3D11_MAP_READ, 0, &mapped);
-		const std::uint8_t * sptr = reinterpret_cast<const uint8_t*>(mapped.pData);
-		for (unsigned int row = 0; row < new_desc.Height; row++)
-		{
-			unsigned int row_start = row * mapped.RowPitch;
-			for (unsigned int col = 0; col < new_desc.Width; col++)
-			{
-				unsigned int col_start = col * 4;
-
-				byte R = sptr[row_start + col_start + 0];
-				byte G = sptr[row_start + col_start + 1];
-				byte B = sptr[row_start + col_start + 2];
-				byte A = sptr[row_start + col_start + 3];
-
-				texture->pixels_.emplace_back((int)((R+G+B+A) / 4));
-			}
-		}
-		this->context_->Unmap(res.Get(), 0);
-	}
-
-	texture->size_.x = static_cast<float>(desc.Width);
-	texture->size_.y = static_cast<float>(desc.Height);
-}
-
-void DirectX11::CreateVertexBufferFromTextureSize(const std::shared_ptr<DirectX11::Texture> & texture)
-{
-	struct SimpleVertex
-	{
-		DirectX::XMFLOAT3 position_;
-		DirectX::XMFLOAT2 texcoord_;
-	};
-
-	auto & x = texture->size_.x;
-	auto & y = texture->size_.y;
-
-	SimpleVertex vertices[] =
-	{
-		DirectX::XMFLOAT3(-x / 2.f, 0, +y / 2.f),DirectX::XMFLOAT2(0,1), //頂点3
-		DirectX::XMFLOAT3(+x / 2.f, 0, +y / 2.f),DirectX::XMFLOAT2(1,1), //頂点4
-		DirectX::XMFLOAT3(+x / 2.f, 0, -y / 2.f), DirectX::XMFLOAT2(1,0),//頂点2
-		DirectX::XMFLOAT3(-x / 2.f, 0, -y / 2.f),DirectX::XMFLOAT2(0,0),//頂点1,
-	};
-
-	D3D11_BUFFER_DESC bd;
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(SimpleVertex) * (sizeof(vertices) / sizeof(vertices[0]));
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.CPUAccessFlags = 0;
-	bd.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA InitData;
-	InitData.pSysMem = vertices;
-
-	this->device_->CreateBuffer(&bd, &InitData, texture->vertex_buffer_.GetAddressOf());
-}
-
-void DirectX11::LoadTexture(const Resource::Texture::PATH & path, std::shared_ptr<ITexture>& texture)
-{
-	auto dx_texture = std::make_shared<Texture>();
-	texture = dx_texture;
-
-	CreateTexture(dx_texture, path);
-	CreateVertexBufferFromTextureSize(dx_texture);
-}
-
 void DirectX11::LoadModel(const Resource::Model::PATH & path, std::shared_ptr<IModel>& model)
 {
 	auto dx_model = std::make_shared<DirectX11::Model>();
@@ -650,137 +501,17 @@ void DirectX11::LoadModel(const Resource::Model::PATH & path, std::shared_ptr<IM
 
 	for (unsigned int n = 0; n < mesh_cnt; ++n)
 	{
-		if (meshes[n].texture_ != "")
-		{
-			auto dir = file_path;
-			dir.replace(dir.rfind("/"), dir.size() - dir.rfind("/"), "/" + meshes[n].texture_);
-			std::wstring w_file_path = std::wstring(dir.begin(), dir.end());
-			DirectX::CreateWICTextureFromFile(this->device_.Get(), w_file_path.c_str(), nullptr, dx_model->meshes_[n].srv_.GetAddressOf());
-		}
+		//if (meshes[n].texture_ != "")
+		//{
+		//	auto dir = file_path;
+		//	dir.replace(dir.rfind("/"), dir.size() - dir.rfind("/"), "/" + meshes[n].texture_);
+		//	std::wstring w_file_path = std::wstring(dir.begin(), dir.end());
+		//	DirectX::CreateWICTextureFromFile(this->graphics_->device().Get(), w_file_path.c_str(), nullptr, dx_model->meshes_[n].srv_.GetAddressOf());
+		//}
 
 		this->CreateVertexBuffer(dx_model->meshes_[n], meshes[n].vertices_);
 		this->CreateIndexBuffer(dx_model->meshes_[n], meshes[n].indices_);
 	}
-}
-
-void DirectX11::CreateInputLayoutAndConstantBufferFromShader(const std::shared_ptr<Shader>& shader, ID3DBlob * blob)
-{
-	ID3D11ShaderReflection * reflector = nullptr;
-	D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflector);
-
-	D3D11_SHADER_DESC shader_desc;
-	reflector->GetDesc(&shader_desc);
-
-	shader->constant_buffer_.resize(shader_desc.ConstantBuffers);
-
-	for (unsigned int n = 0; n < shader_desc.ConstantBuffers; ++n)
-	{
-		int size = 0;
-		auto cb = reflector->GetConstantBufferByIndex(n);
-		D3D11_SHADER_BUFFER_DESC desc;
-		cb->GetDesc(&desc);
-
-		for (size_t j = 0; j < desc.Variables; ++j)
-		{
-			auto v = cb->GetVariableByIndex(j);
-			D3D11_SHADER_VARIABLE_DESC vdesc;
-			v->GetDesc(&vdesc);
-			if (vdesc.Size % 16)
-				size += vdesc.Size + 16 - (vdesc.Size % 16);
-			else
-				size += vdesc.Size;
-		}
-
-		D3D11_BUFFER_DESC bd;
-		bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		bd.ByteWidth = size;
-		bd.CPUAccessFlags = 0;
-		bd.MiscFlags = 0;
-		bd.StructureByteStride = 0;
-		bd.Usage = D3D11_USAGE_DEFAULT;
-
-		if (FAILED(this->device_->CreateBuffer(&bd, nullptr, shader->constant_buffer_[n].GetAddressOf())))
-			std::cout << "コンスタントバッファーの作成に失敗しました。" << std::endl;
-	}
-
-	std::vector<D3D11_INPUT_ELEMENT_DESC> element;
-	for (unsigned int i = 0; i < shader_desc.InputParameters; ++i) {
-		D3D11_SIGNATURE_PARAMETER_DESC sigdesc;
-		reflector->GetInputParameterDesc(i, &sigdesc);
-
-		auto format = GetDxgiFormat(sigdesc.ComponentType, sigdesc.Mask);
-
-		D3D11_INPUT_ELEMENT_DESC eledesc =
-		{
-			sigdesc.SemanticName
-			, sigdesc.SemanticIndex
-			, format
-			, 0
-			, D3D11_APPEND_ALIGNED_ELEMENT
-			, D3D11_INPUT_PER_VERTEX_DATA
-			, 0
-		};
-
-		element.emplace_back(eledesc);
-	}
-
-	if (!element.empty())
-		if (FAILED(this->device_->CreateInputLayout(&element[0], element.size(),
-			blob->GetBufferPointer(), blob->GetBufferSize(), shader->input_layout_.GetAddressOf())))
-			std::cout << "インプットレイアウトの作成に失敗しました。" << std::endl;
-}
-
-DXGI_FORMAT DirectX11::GetDxgiFormat(D3D_REGISTER_COMPONENT_TYPE type, BYTE mask)
-{
-	if (mask == 0x0F)
-	{
-		// xyzw
-		switch (type)
-		{
-		case D3D_REGISTER_COMPONENT_FLOAT32:
-			return DXGI_FORMAT_R32G32B32A32_FLOAT;
-		case D3D_REGISTER_COMPONENT_UINT32:
-			return DXGI_FORMAT_R32G32B32A32_UINT;
-		}
-	}
-
-	if (mask == 0x07)
-	{
-		// xyz
-		switch (type)
-		{
-		case D3D_REGISTER_COMPONENT_FLOAT32:
-			return DXGI_FORMAT_R32G32B32_FLOAT;
-		case D3D_REGISTER_COMPONENT_UINT32:
-			return DXGI_FORMAT_R32G32B32_UINT;
-		}
-	}
-
-	if (mask == 0x3)
-	{
-		// xy
-		switch (type)
-		{
-		case D3D_REGISTER_COMPONENT_FLOAT32:
-			return DXGI_FORMAT_R32G32_FLOAT;
-		case D3D_REGISTER_COMPONENT_UINT32:
-			return DXGI_FORMAT_R32G32_UINT;
-		}
-	}
-
-	if (mask == 0x1)
-	{
-		// x
-		switch (type)
-		{
-		case D3D_REGISTER_COMPONENT_FLOAT32:
-			return DXGI_FORMAT_R32_FLOAT;
-		case D3D_REGISTER_COMPONENT_UINT32:
-			return DXGI_FORMAT_R32_UINT;
-		}
-	}
-
-	return DXGI_FORMAT_UNKNOWN;
 }
 
 void DirectX11::Destroy(void)

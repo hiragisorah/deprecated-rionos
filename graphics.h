@@ -11,6 +11,8 @@
 
 #include "renderer.h"
 #include "window.h"
+#include "shader-manager.h"
+#include "texture-manager.h"
 
 enum FRAME_RATE
 {
@@ -18,29 +20,33 @@ enum FRAME_RATE
 	FRAME_RATE_LIMITED
 };
 
-struct IShader {};
-struct ITexture
-{
-	ITexture(void)
-		: size_(DirectX::XMFLOAT2(0, 0))
-	{}
-
-	DirectX::XMFLOAT2 size_;
-	std::vector<unsigned int> pixels_;
-};
 struct IModel {};
 
 class Graphics
 {
 public:
-	Graphics(Window * const window) : window_(window) {}
+	Graphics(Window * const window)
+		: window_(window)
+	{}
 	virtual ~Graphics(void) {}
 
 protected:
 	Window * const window_;
 
 public:
-	Window * const window(void) const;
+	Window * const window(void) const { return this->window_; }
+
+protected:
+	std::unique_ptr<ShaderManager> shader_manager_;
+	std::unique_ptr<TextureManager> texture_manager_;
+
+public:
+	const std::unique_ptr<ShaderManager> & shader_manager(void) const { return this->shader_manager_; }
+	template<class _ShaderManager, class ... Args> void set_shader_manager(const Args &... args) { this->shader_manager_ = std::make_unique<_ShaderManager>(args ...); }
+
+public:
+	const std::unique_ptr<TextureManager> & texture_manager(void) const { return this->texture_manager_; }
+	template<class _TextureManager, class ... Args> void set_texture_manager(const Args &... args) { this->texture_manager_ = std::make_unique<_TextureManager>(args ...); }
 
 public:
 	virtual void Initialize(void) = 0;
@@ -66,47 +72,7 @@ public:
 
 	// DB
 private:
-	std::unordered_map<Resource::Shader::PATH, std::shared_ptr<IShader>> shader_db_;
-	std::unordered_map<Resource::Texture::PATH, std::shared_ptr<ITexture>> texture_db_;
 	std::unordered_map<Resource::Model::PATH, std::shared_ptr<IModel>> model_db_;
-
-public:
-	void LoadShader(Resource::Shader::PATH path)
-	{
-		auto & shader = this->shader_db_[path];
-		this->LoadShader(path, shader);
-	}
-	void UnloadShader(Resource::Shader::PATH path)
-	{
-		this->shader_db_.erase(path);
-	}
-	const std::shared_ptr<IShader> & GetShader(Resource::Shader::PATH path)
-	{
-		return this->shader_db_[path];
-	}
-	template<class _Shader> const std::shared_ptr<_Shader> GetShader(Resource::Shader::PATH path)
-	{
-		return std::static_pointer_cast<_Shader>(this->shader_db_[path]);
-	}
-
-public:
-	void LoadTexture(Resource::Texture::PATH path)
-	{
-		auto & texture = this->texture_db_[path];
-		this->LoadTexture(path, texture);
-	}
-	void UnloadTexture(Resource::Texture::PATH path)
-	{
-		this->texture_db_.erase(path);
-	}
-	const std::shared_ptr<ITexture> & GetTexture(Resource::Texture::PATH path)
-	{
-		return this->texture_db_[path];
-	}
-	template<class _Texture> const std::shared_ptr<_Texture> GetTexture(Resource::Texture::PATH path)
-	{
-		return std::static_pointer_cast<_Texture>(this->texture_db_[path]);
-	}
 
 public:
 	void LoadModel(Resource::Model::PATH path)
@@ -128,8 +94,6 @@ public:
 	}
 
 public:
-	virtual void LoadShader(const Resource::Shader::PATH & path, std::shared_ptr<IShader> & shader) = 0;
-	virtual void LoadTexture(const Resource::Texture::PATH & path, std::shared_ptr<ITexture> & texture) = 0;
 	virtual void LoadModel(const Resource::Model::PATH & path, std::shared_ptr<IModel> & model) = 0;
 
 private:

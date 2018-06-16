@@ -1,10 +1,5 @@
 #include "graphics.h"
 
-Window * const Graphics::window(void) const
-{
-	return this->window_;
-}
-
 bool Graphics::Run(void)
 {
 	this->Clear();

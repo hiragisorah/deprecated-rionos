@@ -8,6 +8,9 @@
 #include "..\graphics.h"
 #include "..\window.h"
 
+#include "shader-manager.h"
+#include "texture-manager.h"
+
 #pragma comment(lib, "d3d11.lib")
 
 using namespace Microsoft::WRL;
@@ -15,21 +18,6 @@ using namespace Microsoft::WRL;
 class __declspec(dllexport) DirectX11 : public Graphics
 {
 public:
-	struct Shader : public IShader
-	{
-		ComPtr<ID3D11VertexShader> vertex_shader_;
-		ComPtr<ID3D11GeometryShader> geometry_shader_;
-		ComPtr<ID3D11HullShader> hull_shader_;
-		ComPtr<ID3D11DomainShader> domain_shader_;
-		ComPtr<ID3D11PixelShader> pixel_shader_;
-		ComPtr<ID3D11InputLayout> input_layout_;
-		std::vector<ComPtr<ID3D11Buffer>> constant_buffer_;
-	};
-	struct Texture : public ITexture
-	{
-		ComPtr<ID3D11ShaderResourceView> srv_;
-		ComPtr<ID3D11Buffer> vertex_buffer_;
-	};
 	struct Model : public IModel
 	{
 		struct Mesh
@@ -51,7 +39,10 @@ public:
 	DirectX11(Window * const window)
 		: Graphics(window)
 		, frame_rate_(FRAME_RATE_LIMITED)
-	{}
+	{
+		this->set_shader_manager<Dx11ShaderManager>(this);
+		this->set_texture_manager<Dx11TextureManager>(this);
+	}
 
 private:
 	ComPtr<ID3D11Device> device_;
@@ -59,7 +50,8 @@ private:
 	ComPtr<IDXGISwapChain> swap_chain_;
 
 public:
-	const ComPtr<ID3D11Device> & device(void);
+	const ComPtr<ID3D11Device> & device(void) const;
+	const ComPtr<ID3D11DeviceContext> & context(void) const;
 
 private:
 	FRAME_RATE frame_rate_;
@@ -122,13 +114,9 @@ public:
 	void ShadowMapDisplacement(void) override;
 
 public:
-	void LoadShader(const Resource::Shader::PATH & path, std::shared_ptr<IShader> & shader) override;
-	void LoadTexture(const Resource::Texture::PATH & path, std::shared_ptr<ITexture> & texture) override;
 	void LoadModel(const Resource::Model::PATH & path, std::shared_ptr<IModel> & model) override;
 
 private:
-	void CreateInputLayoutAndConstantBufferFromShader(const std::shared_ptr<Shader> & shader, ID3DBlob * blob);
-	DXGI_FORMAT GetDxgiFormat(D3D_REGISTER_COMPONENT_TYPE type, BYTE mask);
 	template<class _Vertex> void CreateVertexBuffer(DirectX11::Model::Mesh & mesh, std::vector<_Vertex> & vertices)
 	{
 		D3D11_BUFFER_DESC bd = {};
@@ -155,8 +143,6 @@ private:
 
 		this->device_->CreateBuffer(&bd, &sd, mesh.index_buffer_.GetAddressOf());
 	}
-	void CreateTexture(const std::shared_ptr<DirectX11::Texture> & texture, const Resource::Texture::PATH & path);
-	void CreateVertexBufferFromTextureSize(const std::shared_ptr<DirectX11::Texture> & texture);
 
 public:
 	void Destroy(void) override;

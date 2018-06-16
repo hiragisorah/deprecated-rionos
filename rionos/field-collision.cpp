@@ -88,7 +88,7 @@ DirectX::XMFLOAT2 FieldCollision::GetUvFromPos(DirectX::XMFLOAT3 pos)
 
 unsigned int FieldCollision::GetHeightFromUV(DirectX::XMFLOAT2 uv)
 {
-	auto & texture = this->entity().lock()->scene().lock()->graphics()->GetTexture(this->field_);
+	auto & texture = this->entity().lock()->scene().lock()->graphics()->texture_manager()->Get(this->field_);
 	auto & pixels = texture->pixels_;
 	auto & size = texture->size_;
 
