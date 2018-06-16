@@ -57,6 +57,9 @@
     <ClCompile Include="player_movement.cpp">
       <Filter>ソース ファイル\component</Filter>
     </ClCompile>
+    <ClCompile Include="skinmesh-system.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="rionos.def">
@@ -93,6 +96,12 @@
     </ClInclude>
     <ClInclude Include="player_movement.h">
       <Filter>ヘッダー ファイル\component</Filter>
+    </ClInclude>
+    <ClInclude Include="skinmesh-scene.h">
+      <Filter>ヘッダー ファイル\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="skinmesh-system.h">
+      <Filter>ヘッダー ファイル\system</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

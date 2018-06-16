@@ -24,7 +24,7 @@ const ComPtr<ID3D11Device> & DirectX11::device(void)
 
 void DirectX11::Initialize(void)
 {
-	// デバイスとスワップチェーンの作成
+	// デバイスとスワップチェーンの作成 
 	DXGI_SWAP_CHAIN_DESC sd;
 	memset(&sd, 0, sizeof(sd));
 	sd.BufferCount = 1;
@@ -392,6 +392,22 @@ void DirectX11::ShadowMapDisplacement(void)
 	this->context_->OMSetRenderTargets(1, this->back_buffer_rtv_.GetAddressOf(), this->dsv_.Get());
 	this->context_->RSSetViewports(1, &this->viewport_);
 }
+
+using namespace DirectX;
+
+struct SkinMesh
+{
+	XMFLOAT3 position_;
+	XMFLOAT3 color_;
+	XMFLOAT3 normal_;
+	unsigned int indices_[4];
+	XMFLOAT3 weights_;
+};
+
+struct Bone
+{
+	DirectX::XMMATRIX init_;
+};
 
 void DirectX11::LoadShader(const Resource::Shader::PATH & path, std::shared_ptr<IShader>& shader)
 {

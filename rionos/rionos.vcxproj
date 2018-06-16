@@ -27,7 +27,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -127,6 +127,7 @@
     <ClCompile Include="field-collision.cpp" />
     <ClCompile Include="player_movement.cpp" />
     <ClCompile Include="rionos.cpp" />
+    <ClCompile Include="skinmesh-system.cpp" />
     <ClCompile Include="transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +142,8 @@
     <ClInclude Include="player.h" />
     <ClInclude Include="player_movement.h" />
     <ClInclude Include="rionos.h" />
+    <ClInclude Include="skinmesh-scene.h" />
+    <ClInclude Include="skinmesh-system.h" />
     <ClInclude Include="test-scene.h" />
     <ClInclude Include="transform.h" />
   </ItemGroup>

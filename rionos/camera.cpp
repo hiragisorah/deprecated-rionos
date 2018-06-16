@@ -2,7 +2,7 @@
 
 Camera::Camera(std::shared_ptr<System>& self)
 	: Seed::System(self)
-	, eye_(DirectX::XMVectorSet(0.f, 1.f, -1.f, 0.f))
+	, eye_(DirectX::XMVectorSet(-1.f, 1.f, -1.f, 0.f))
 	, at_(DirectX::XMVectorZero())
 	, up_(DirectX::XMVectorSet(0.f, 1.f, 0.f, 0.f))
 	, fov_(DirectX::XM_PIDIV4)
